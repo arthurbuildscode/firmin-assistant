@@ -1,0 +1,17 @@
+# Fournisseur de transports fabriqué par l'atelier (gabarit : content/atelier/gabarits/fournisseur_transports/).
+# Contrat : capabilities/transports/fournisseurs.py (manifeste) et interface.py (classe Source).
+nom: {{nom}}
+titre: {{titre}}
+description: Horaires et retards du réseau « {{titre}} », lus en données publiques.
+modes: {{modes}}
+source: api_ouverte          # api_ouverte (API ou flux publics) | page_web (pages HTML publiques, via client.navigation())
+formats: [json]              # documentaire : gtfs, gtfs_rt, siri, json, html…
+portee: locale
+zone: {{zone}}
+origine: assistant           # toujours (fabriqué par l'atelier)
+reseau: ["{{hote}}"]         # tout hôte de plus devra être approuvé par le foyer
+licence: à préciser (conditions d'utilisation des données, voir README.md)
+parametres:
+  site: {{site}}
+  # Si le réseau publie une grille GTFS (et un flux GTFS-RT), préférer :
+  #   class Source(interface.SourceGtfs) dans source.py, et ici url_grille / url_temps_reel / url_alertes.

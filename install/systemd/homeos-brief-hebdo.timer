@@ -1,0 +1,12 @@
+[Unit]
+Description=Firmin Assistant - timer brief hebdomadaire
+
+[Timer]
+# Valeur par défaut du contrat ; install.sh génère un drop-in depuis data/config.yaml
+OnCalendar=Sun *-*-* 19:00:00
+# Lot 5d : rattrape un tir manqué (VPS arrêté ou redémarré à l'heure du brief)
+Persistent=true
+RandomizedDelaySec=30
+
+[Install]
+WantedBy=timers.target

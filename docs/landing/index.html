@@ -1,0 +1,1298 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Firmin Assistant</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Firmin, votre assistant IA de famille, installé sur votre propre serveur. Agenda, courses, repas, papiers : la maison tourne, vous soufflez.">
+<!--
+  MAINTENANCE — à actualiser à chaque lot livré :
+  1. Les pastilles de statut : class="st livre" | "st encours" | "st avenir" (le texte vient du CSS, une seule classe à changer).
+  2. Le journal « Ce qui est livré / en cours / à venir » (section #prix, bloc .lots).
+  3. La date « Page mise à jour le … » dans le pied de page.
+  4. Le prix (« — € ») et l'adresse de contact provisoire quand ils seront fixés.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout : une plaque émaillée de maison comme signature (logo + prénom de l'assistant), le reste calme ;
+   colonnes texte | démonstration qui se replient en une colonne sous 900 px. */
+:root{
+  --paper:#F3F5F9;        /* fond, gris bleuté */
+  --paper-2:#E8ECF4;      /* bulles de l'assistant, fonds secondaires */
+  --surface:#FFFFFF;      /* fenêtres, cartes */
+  --ink:#131D36;          /* texte principal, encre marine */
+  --ink-2:#4B5672;        /* texte secondaire */
+  --line:#D6DCE8;
+  --line-strong:#A9B3C8;
+  --plaque:#1E3F8F;       /* bleu émail des plaques de rue */
+  --plaque-deep:#16306F;
+  --plaque-ink:#FFFFFF;
+  --link:#1E3F8F;
+  --tint:#DCE5F7;         /* teinte d'accent douce */
+  --ok:#22704A; --ok-bg:#DDF0E4;
+  --wip:#94600F; --wip-bg:#F8EBCF;
+  --band-chip:rgba(255,255,255,.13);
+  --band-ok:#8FE3B0; --band-wip:#FFD58A; --band-soft:#C9D6F5;
+  --shadow:0 1px 0 rgba(19,29,54,.04), 0 18px 40px -22px rgba(19,29,54,.35);
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r-lg:22px; --r-md:14px; --r-sm:9px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0C1222; --paper-2:#18213A; --surface:#121A2E; --ink:#E7EBF4; --ink-2:#9BA7C0;
+    --line:#232E48; --line-strong:#3A4766; --plaque:#2449A8; --plaque-deep:#1A3784; --plaque-ink:#FFFFFF;
+    --link:#9DB8FF; --tint:#1C2B52; --ok:#7FD6A2; --ok-bg:#163126; --wip:#F1C46B; --wip-bg:#3A2D12;
+    --shadow:0 1px 0 rgba(0,0,0,.2), 0 22px 44px -24px rgba(0,0,0,.8);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0C1222; --paper-2:#18213A; --surface:#121A2E; --ink:#E7EBF4; --ink-2:#9BA7C0;
+  --line:#232E48; --line-strong:#3A4766; --plaque:#2449A8; --plaque-deep:#1A3784; --plaque-ink:#FFFFFF;
+  --link:#9DB8FF; --tint:#1C2B52; --ok:#7FD6A2; --ok-bg:#163126; --wip:#F1C46B; --wip-bg:#3A2D12;
+  --shadow:0 1px 0 rgba(0,0,0,.2), 0 22px 44px -24px rgba(0,0,0,.8);
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1.0625rem/1.6 var(--body);overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--paper)}
+img,svg{max-width:100%}
+[hidden]{display:none!important}
+a{color:var(--link);text-underline-offset:3px}
+h1,h2,h3,h4{font-family:var(--display);line-height:1.08;margin:0;text-wrap:balance;letter-spacing:-.015em}
+h2{font-size:clamp(2rem,4.4vw,3.1rem);font-weight:800}
+h3{font-size:1.5rem;font-weight:700}
+h4{font-size:1.06rem;font-weight:700;letter-spacing:0}
+p{margin:0}
+:focus-visible{outline:3px solid var(--link);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1180px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (min-width:700px){.wrap{padding-left:max(32px,env(safe-area-inset-left,0px));padding-right:max(32px,env(safe-area-inset-right,0px))}}
+.sec{padding-block:clamp(64px,9vw,120px)}
+.sec + .sec{border-top:1px solid var(--line)}
+.sec-head{display:grid;gap:16px;max-width:46rem;margin-bottom:clamp(36px,5vw,60px)}
+.kicker{font-family:var(--display);font-weight:600;font-size:1rem;color:var(--link)}
+.lede{font-size:1.18rem;color:var(--ink-2);max-width:40rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ico{width:1.25em;height:1.25em;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* Boutons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.55em;min-height:48px;padding:0 22px;border-radius:999px;font:700 1rem/1 var(--body);text-decoration:none;border:1.5px solid transparent;cursor:pointer;transition:transform .15s ease, background .15s ease}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--plaque);color:var(--plaque-ink)}
+.btn-primary:hover{background:var(--plaque-deep)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+.btn-ghost:hover{background:var(--surface)}
+.btn-sm{min-height:38px;padding:0 16px;font-size:.92rem}
+
+/* Plaque émaillée */
+.plaque{position:relative;display:inline-flex;align-items:center;justify-content:center;background:var(--plaque);color:var(--plaque-ink);
+  font-family:var(--display);font-weight:700;letter-spacing:.01em;border-radius:12px;
+  box-shadow:inset 0 0 0 3px var(--plaque), inset 0 0 0 5px var(--plaque-ink), 0 1px 0 rgba(0,0,0,.08), 0 12px 26px -14px rgba(19,40,100,.7)}
+.plaque::before,.plaque::after{content:"";position:absolute;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:var(--plaque-ink);opacity:.85}
+.plaque::before{left:11px}.plaque::after{right:11px}
+.plaque-sm{font-size:1rem;padding:7px 24px 8px;border-radius:9px}
+.plaque-sm::before{left:9px;width:4px;height:4px;margin-top:-2px}.plaque-sm::after{right:9px;width:4px;height:4px;margin-top:-2px}
+.plaque-xl{font-size:clamp(2.1rem,4.2vw,2.7rem);padding:.28em 1.15em .34em;border-radius:18px;min-width:6.4em}
+.plaque-xl .nm{display:inline-block;transition:transform .35s ease, opacity .35s ease}
+.plaque-xl .nm.out{transform:translateY(-35%);opacity:0}
+
+/* En-tête */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:16px;min-height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-family:var(--display);font-weight:600;font-size:1.05rem}
+.nav{display:none;gap:22px;margin-left:auto}
+.nav a{color:var(--ink-2);text-decoration:none;font-size:.96rem}
+.nav a:hover{color:var(--ink)}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+@media (min-width:1080px){.nav{display:flex}.top-actions{margin-left:12px}}
+.theme-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.theme-btn .moon{display:none}
+:root[data-theme="dark"] .theme-btn .sun{display:none}
+:root[data-theme="dark"] .theme-btn .moon{display:block}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .theme-btn .sun{display:none}:root:not([data-theme="light"]) .theme-btn .moon{display:block}}
+
+/* Hero */
+.hero{padding-block:clamp(40px,7vw,96px) clamp(56px,8vw,110px)}
+.hero .wrap{display:grid;gap:clamp(40px,6vw,72px);align-items:center}
+@media (min-width:980px){.hero .wrap{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
+.hero-copy{display:grid;gap:26px;min-width:0}
+.name-row{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px}
+.name-note{font-size:.98rem;color:var(--ink-2);max-width:17rem;line-height:1.4}
+.hero h1{font-size:clamp(2.7rem,5.6vw,4.4rem);font-weight:800;letter-spacing:-.03em;line-height:.98}
+.hero h1 span{display:block;color:var(--ink-2);font-weight:600}
+.hero-sub{font-size:clamp(1.12rem,1.6vw,1.3rem);color:var(--ink-2);max-width:34rem}
+.hero-sub strong{color:var(--ink)}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px}
+.proof{display:flex;flex-wrap:wrap;gap:8px 22px;list-style:none;margin:0;padding:0;color:var(--ink-2);font-size:.95rem}
+.proof li{display:flex;align-items:center;gap:8px}
+.proof .ico{color:var(--ok)}
+
+/* Fenêtre de conversation */
+.chat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);overflow:hidden;min-width:0}
+.chat-h{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.avatar{width:36px;height:36px;border-radius:10px;background:var(--plaque);color:var(--plaque-ink);display:grid;place-items:center;font:700 1rem var(--display);box-shadow:inset 0 0 0 2px var(--plaque),inset 0 0 0 3.5px var(--plaque-ink)}
+.chat-h b{font-family:var(--display);font-size:1.02rem}
+.chat-h small{display:block;color:var(--ink-2);font-size:.82rem}
+.online{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:6px}
+.chat-b{padding:18px;display:grid;gap:14px;background:linear-gradient(var(--surface),var(--paper) 140%)}
+.daychip{justify-self:center;font-size:.8rem;color:var(--ink-2);background:var(--paper-2);padding:4px 12px;border-radius:999px}
+.msg{max-width:92%;padding:12px 14px;border-radius:16px;font-size:.96rem;line-height:1.45}
+.msg.bot{background:var(--paper-2);border-top-left-radius:6px}
+.msg.me{justify-self:end;background:var(--plaque);color:var(--plaque-ink);border-top-right-radius:6px}
+.msg.me .vx{opacity:.8;font-size:.82rem;display:block;margin-bottom:2px}
+.brief{background:var(--paper-2);border-radius:16px;border-top-left-radius:6px;padding:14px;display:grid;gap:12px}
+.brief-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brief-top b{font-family:var(--display);font-size:1.12rem}
+.listen{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font:700 .85rem var(--body);cursor:pointer}
+.listen[aria-pressed="true"]{background:var(--plaque);color:var(--plaque-ink);border-color:var(--plaque)}
+.listen-note{font-size:.8rem;color:var(--ink-2)}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.c{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 11px;display:grid;gap:3px;align-content:start;min-width:0}
+.c-t{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink-2)}
+.c-t .ico{width:15px;height:15px;color:var(--link)}
+.c-v{font-family:var(--display);font-weight:700;font-size:1.08rem;line-height:1.15}
+.c-d{font-size:.82rem;color:var(--ink-2);line-height:1.35}
+.c ul{list-style:none;margin:2px 0 0;padding:0;font-size:.82rem;color:var(--ink-2);display:grid;gap:1px}
+.c ul b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:700;margin-right:4px}
+.composer{display:flex;align-items:center;gap:10px;margin:0 18px 18px;padding:8px 8px 8px 16px;border:1.5px solid var(--line);border-radius:999px;color:var(--ink-2);font-size:.95rem;background:var(--surface)}
+.composer span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.composer i{width:36px;height:36px;border-radius:50%;background:var(--plaque);color:var(--plaque-ink);display:grid;place-items:center;font-style:normal}
+
+/* Journée */
+.day{list-style:none;margin:0;padding:0;display:grid;gap:0;position:relative}
+.moment{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px 18px;padding-block:28px;border-top:1px solid var(--line);position:relative}
+.moment:first-child{border-top:0;padding-top:0}
+.m-time{font-family:var(--display);font-weight:700;font-size:1.25rem;font-variant-numeric:tabular-nums;color:var(--link);padding-top:2px}
+.m-text{display:grid;gap:10px;align-content:start;min-width:0}
+.m-text p{color:var(--ink-2);max-width:32rem}
+.m-demo{grid-column:1 / -1;min-width:0;display:grid;gap:8px;align-content:start}
+@media (min-width:900px){
+  .moment{grid-template-columns:88px minmax(0,1fr) minmax(0,1.05fr);gap:28px;padding-block:36px}
+  .m-demo{grid-column:auto}
+  .m-time{font-size:1.5rem}
+}
+.mini{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;display:grid;gap:10px}
+.mini .msg{max-width:100%}
+.mini-row{display:flex;flex-wrap:wrap;gap:8px}
+.chipbtn{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;font:700 .86rem var(--body)}
+.chipbtn.on{background:var(--plaque);border-color:var(--plaque);color:var(--plaque-ink)}
+.okline{display:flex;align-items:center;gap:6px;font-size:.84rem;color:var(--ok)}
+.okline .ico{width:16px;height:16px}
+.wave{display:flex;align-items:center;gap:3px;height:28px}
+.wave i{width:4px;border-radius:3px;background:var(--link);opacity:.75;animation:wv 1.2s ease-in-out infinite}
+@keyframes wv{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+.bus{display:grid;gap:6px}
+.bus-row{display:flex;justify-content:space-between;gap:12px;font-size:.92rem;font-variant-numeric:tabular-nums}
+.bus-row b{font-family:var(--display);font-size:1.15rem}
+.late{color:var(--wip);font-weight:700}
+.track{position:relative;height:6px;border-radius:6px;background:var(--paper-2);overflow:hidden}
+.track::after{content:"";position:absolute;inset:0 62% 0 0;background:var(--link);border-radius:6px}
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:.88rem;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl th{font-weight:700;color:var(--ink-2);font-size:.8rem}
+.tbl tr.best td{background:var(--ok-bg)}
+.tbl td.num,.tbl th.num{text-align:right}
+.receipt{display:grid;grid-template-columns:62px minmax(0,1fr);gap:12px;align-items:start}
+.paper{height:78px;border-radius:6px;background:var(--surface);border:1px solid var(--line-strong);transform:rotate(-4deg);padding:8px 7px;display:grid;gap:5px;align-content:start;box-shadow:0 6px 14px -8px rgba(19,29,54,.35)}
+.paper i{height:4px;border-radius:2px;background:var(--line-strong)}
+.paper i:nth-child(1){width:70%;background:var(--ink-2)}.paper i:nth-child(3){width:55%}.paper i:nth-child(5){width:40%;margin-top:6px;background:var(--ink-2)}
+.dish{display:grid;gap:3px;font-size:.88rem;color:var(--ink-2);list-style:none;margin:0;padding:0}
+.dish b{color:var(--ink)}
+
+/* Statuts */
+.st{display:inline-flex;align-items:center;gap:7px;font:700 .8rem/1 var(--body);padding:5px 10px 5px 8px;border-radius:999px;white-space:nowrap;justify-self:start;align-self:start}
+.st::before{content:"";width:9px;height:9px;border-radius:50%;box-sizing:border-box;flex:none}
+.st.livre{color:var(--ok);background:var(--ok-bg)}
+.st.livre::before{background:var(--ok)}
+.st.livre::after{content:"Livré"}
+.st.encours{color:var(--wip);background:var(--wip-bg)}
+.st.encours::before{border:2px solid var(--wip);background:linear-gradient(90deg,var(--wip) 50%,transparent 50%)}
+.st.encours::after{content:"En cours"}
+.st.avenir{color:var(--ink-2);background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong)}
+.st.avenir::before{border:2px solid var(--ink-2)}
+.st.avenir::after{content:"À venir"}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;color:var(--ink-2);font-size:.95rem}
+.legend span.lt{display:flex;align-items:center;gap:8px}
+
+/* Fonctionnalités */
+.feat{display:grid;gap:22px;padding-block:40px;border-top:1px solid var(--line)}
+.feat:first-of-type{border-top:0;padding-top:0}
+@media (min-width:900px){.feat{grid-template-columns:minmax(0,.85fr) minmax(0,1.6fr);gap:56px;padding-block:52px}}
+.feat-h{display:grid;gap:12px;align-content:start;min-width:0}
+.feat-h p{color:var(--ink-2);max-width:26rem}
+.feat-ico{width:46px;height:46px;border-radius:13px;background:var(--tint);color:var(--link);display:grid;place-items:center}
+.feat-ico .ico{width:24px;height:24px}
+.flist{list-style:none;margin:0;padding:0;display:grid;min-width:0}
+.flist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;padding-block:16px;border-top:1px solid var(--line)}
+.flist li:first-child{border-top:0;padding-top:4px}
+.flist p{color:var(--ink-2);font-size:.98rem;margin-top:3px}
+@media (max-width:520px){.flist li{grid-template-columns:1fr}.flist .st{grid-row:1;margin-bottom:2px}}
+.anatomy{display:grid;gap:6px;margin-top:6px}
+.anatomy div{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:baseline;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:.93rem}
+.anatomy b{font-family:var(--display);min-width:7.2rem}
+.anatomy span{color:var(--ink-2)}
+.anatomy-note{font-size:.92rem;color:var(--ink-2)}
+
+/* Bande sécurité */
+.band{background:var(--plaque);color:var(--plaque-ink);border-top:0!important}
+.band .kicker{color:var(--band-soft)}
+.band .lede{color:var(--band-soft)}
+.band h2{color:var(--plaque-ink)}
+.sec-grid{display:grid;gap:1px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.16);border-radius:var(--r-lg);overflow:hidden}
+@media (min-width:700px){.sec-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1040px){.sec-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.sg{background:var(--plaque);padding:24px;display:grid;gap:10px;align-content:start;min-width:0}
+.sg .ico{width:26px;height:26px;color:var(--band-soft)}
+.sg h3{font-size:1.2rem;color:var(--plaque-ink)}
+.sg p{color:var(--band-soft);font-size:.98rem}
+.band .st{background:var(--band-chip);color:var(--plaque-ink);box-shadow:none}
+.band .st.livre::before{background:var(--band-ok)}
+.band .st.encours::before{border-color:var(--band-wip);background:linear-gradient(90deg,var(--band-wip) 50%,transparent 50%)}
+.band .st.avenir::before{border-color:var(--band-soft)}
+.band :is(.vault-card,.filter-card) .st.avenir{color:var(--ink-2);background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong)}
+.band :is(.vault-card,.filter-card) .st.avenir::before{border-color:var(--ink-2)}
+.band :is(.vault-card,.filter-card) .st.encours{color:var(--wip);background:var(--wip-bg);box-shadow:none}
+.band :is(.vault-card,.filter-card) .st.encours::before{border-color:var(--wip);background:linear-gradient(90deg,var(--wip) 50%,transparent 50%)}
+.vault{margin-top:clamp(28px,4vw,44px);display:grid;gap:20px;align-items:center}
+@media (min-width:900px){.vault{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.vault p{color:var(--band-soft);max-width:34rem}
+.vault-card{background:var(--surface);color:var(--ink);border-radius:var(--r-lg);padding:20px;display:grid;gap:12px;box-shadow:0 24px 50px -24px rgba(0,0,0,.6);min-width:0}
+.vault-card h4{display:flex;align-items:center;gap:8px}
+.vault-card h4 .ico{color:var(--link)}
+.field{display:grid;gap:5px;font-size:.86rem;color:var(--ink-2)}
+.field div{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink);font-size:1rem;letter-spacing:.12em;background:var(--paper)}
+.vault-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;font-size:.84rem;color:var(--ink-2)}
+.vault-foot .ico{width:16px;height:16px;color:var(--ok)}
+.vault-foot span{display:flex;align-items:center;gap:6px}
+
+/* Filtre des données sensibles : ce que vous écrivez / ce qui part vers l'IA */
+.filter-card{background:var(--surface);color:var(--ink);border-radius:var(--r-lg);padding:20px;display:grid;gap:12px;box-shadow:0 24px 50px -24px rgba(0,0,0,.6);min-width:0}
+.filter-card h4{display:flex;align-items:center;gap:8px}
+.filter-card h4 .ico{color:var(--link)}
+.fl-step{display:grid;gap:5px;font-size:.84rem;color:var(--ink-2)}
+.fl-step .msg{max-width:100%;font-size:.95rem}
+.fl-step .msg.me{justify-self:stretch}
+.fl-sent{border:1.5px dashed var(--line-strong);border-radius:12px;padding:10px 12px;font-size:.95rem;color:var(--ink);line-height:1.5}
+.redact{display:inline-block;font-family:var(--mono);font-size:.86em;background:var(--tint);color:var(--link);border-radius:6px;padding:1px 7px;white-space:nowrap}
+
+/* Combien ça rapporte */
+.roi{display:grid;gap:clamp(28px,4vw,48px)}
+@media (min-width:960px){.roi{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start}}
+.levers{list-style:none;margin:0;padding:0;display:grid}
+.lever{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 16px;padding-block:24px;border-top:1px solid var(--line)}
+.lever:first-child{border-top:0;padding-top:0}
+.lever .feat-ico{grid-row:span 3;width:42px;height:42px;border-radius:12px}
+.lever .feat-ico .ico{width:22px;height:22px}
+.lever h3{font-size:1.25rem}
+.lever p{color:var(--ink-2);max-width:34rem}
+.lever .mini{margin-top:8px;min-width:0}
+@media (max-width:560px){.lever{grid-template-columns:minmax(0,1fr)}.lever .feat-ico{grid-row:auto}}
+.tbl.wrap-last td:last-child,.tbl.wrap-last th:last-child{white-space:normal}
+.ex{font-size:.78rem;color:var(--ink-2);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.gain{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:clamp(22px,3vw,30px);display:grid;gap:18px;min-width:0}
+@media (min-width:960px){.gain{position:sticky;top:96px}}
+.gain-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.gain-label{font-family:var(--display);font-weight:600;color:var(--ink-2)}
+.gain-amount{font-family:var(--display);font-weight:800;font-size:clamp(3rem,7vw,4.2rem);line-height:1;letter-spacing:-.03em;color:var(--ink)}
+.gain-amount small{display:block;font:400 1rem/1.4 var(--body);letter-spacing:0;color:var(--ink-2);margin-top:8px}
+.formula{background:var(--tint);border-radius:var(--r-md);padding:14px 16px;font-size:.97rem;display:grid;gap:4px}
+.formula b{font-family:var(--display);font-size:1.05rem}
+.gain .incl{gap:16px}
+.gain .incl ul{font-size:.93rem}
+.sources-note{font-size:.93rem;color:var(--ink-2);display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px}
+.sources-note .ico{color:var(--link);margin-top:2px}
+
+/* Schéma */
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(16px,3vw,32px)}
+.diagram svg{display:block;width:100%;height:auto}
+.dg-mobile{max-width:380px;margin-inline:auto}
+.dg-desktop{display:none!important}
+@media (min-width:760px){.dg-desktop{display:block!important}.dg-mobile{display:none!important}}
+.n-box{fill:var(--paper);stroke:var(--line-strong);stroke-width:1.5}
+.n-core{fill:var(--plaque);stroke:var(--plaque)}
+.n-t{fill:var(--ink);font:700 17px var(--display)}
+.n-s{fill:var(--ink-2);font:400 13.5px var(--body)}
+.n-core-t{fill:var(--plaque-ink);font:700 17px var(--display)}
+.n-core-s{fill:var(--band-soft);font:400 13.5px var(--body)}
+.vps{fill:var(--tint);fill-opacity:.45;stroke:var(--link);stroke-width:1.6;stroke-dasharray:7 6}
+.vps-t{fill:var(--link);font:700 14px var(--display)}
+.vps-s{fill:var(--ink-2);font:400 12.5px var(--body)}
+.ar{stroke:var(--ink-2);stroke-width:1.8;fill:none}
+.ar-head{fill:var(--ink-2)}
+.how{display:grid;gap:clamp(28px,4vw,48px)}
+.how-cols{display:grid;gap:28px}
+@media (min-width:900px){.how-cols{grid-template-columns:repeat(2,minmax(0,1fr));gap:48px}}
+.how-cols > div{display:grid;gap:12px;align-content:start;min-width:0}
+.how-cols p{color:var(--ink-2)}
+.oss{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:4px 0 0;padding:0}
+.oss li{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:.92rem}
+.oss li small{color:var(--ink-2);font-size:.85rem}
+.third{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.third li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;color:var(--ink-2)}
+.third li b{color:var(--ink)}
+.third .ico{color:var(--link);margin-top:3px}
+
+/* Prérequis */
+.req{list-style:none;margin:0 0 clamp(36px,5vw,56px);padding:0;display:grid;gap:14px}
+@media (min-width:760px){.req{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1100px){.req{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.req li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md)}
+.req .feat-ico{width:40px;height:40px;border-radius:11px}
+.req .feat-ico .ico{width:21px;height:21px}
+.req h3{font-size:1.12rem;margin-bottom:5px}
+.req p{color:var(--ink-2);font-size:.97rem}
+.cost{display:grid;gap:14px;max-width:52rem}
+.cost h3{font-size:1.3rem}
+.cost-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface)}
+.cost table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:440px}
+.cost th,.cost td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.cost th{font-size:.88rem;color:var(--ink-2);font-weight:700}
+.cost td:last-child,.cost th:last-child{text-align:right;white-space:nowrap}
+.cost td small{display:block;color:var(--ink-2);font-size:.88rem}
+.cost tfoot td{border-bottom:0;font-weight:700;font-family:var(--display);font-size:1.08rem;background:var(--tint)}
+.fine{font-size:.9rem;color:var(--ink-2)}
+
+/* Prix */
+.price{display:grid;gap:28px}
+@media (min-width:960px){.price{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:48px;align-items:start}}
+.ticket{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:clamp(22px,3vw,34px);display:grid;gap:20px;min-width:0}
+.ticket-top{display:grid;gap:6px}
+.ticket-top p{color:var(--ink-2)}
+.amount{font-family:var(--display);font-weight:800;font-size:clamp(3.4rem,8vw,5rem);line-height:1;letter-spacing:-.03em}
+.amount small{font-size:1rem;font-weight:600;color:var(--ink-2);letter-spacing:0;margin-left:8px}
+.incl{display:grid;gap:18px}
+@media (min-width:560px){.incl{grid-template-columns:1fr 1fr}}
+.incl h4{margin-bottom:8px}
+.incl ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:.97rem}
+.incl li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px}
+.incl .yes .ico{color:var(--ok);margin-top:2px}
+.incl .no .ico{color:var(--ink-2);margin-top:2px}
+.incl .no li{color:var(--ink-2)}
+.buy-note{background:var(--tint);border-radius:var(--r-md);padding:14px 16px;font-size:.96rem}
+.wip-note{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;padding:16px;border-radius:var(--r-md);background:var(--wip-bg);color:var(--ink);font-size:.97rem}
+.wip-note .ico{color:var(--wip);margin-top:2px}
+.lots{display:grid;gap:14px;min-width:0}
+.lots h3{font-size:1.3rem}
+.lot-col{border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);padding:16px 18px;display:grid;gap:10px}
+.lot-col .st{margin-bottom:2px}
+.lot-col ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.lot-col li{display:grid;grid-template-columns:4.2rem minmax(0,1fr);gap:10px;font-size:.97rem}
+.lot-col li b{font-family:var(--display);font-variant-numeric:tabular-nums;color:var(--ink-2);font-weight:600}
+.lot-col li span{color:var(--ink)}
+.lot-col li small{display:block;color:var(--ink-2);font-size:.88rem}
+.lot-col.next li{grid-template-columns:minmax(0,1fr)}
+
+/* FAQ */
+.faq{display:grid;gap:10px;max-width:52rem}
+.faq details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md)}
+.faq summary{list-style:none;cursor:pointer;padding:18px 54px 18px 20px;position:relative;font-family:var(--display);font-weight:700;font-size:1.1rem;line-height:1.3}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"";position:absolute;right:22px;top:50%;width:10px;height:10px;margin-top:-7px;border-right:2px solid var(--link);border-bottom:2px solid var(--link);transform:rotate(45deg);transition:transform .2s ease}
+.faq details[open] summary::after{transform:rotate(-135deg);margin-top:-2px}
+.faq summary:hover{color:var(--link)}
+.faq .ans{padding:0 20px 20px;color:var(--ink-2);display:grid;gap:10px;max-width:44rem}
+.faq .ans strong{color:var(--ink)}
+.faq code{font-family:var(--mono);font-size:.9em;background:var(--paper-2);padding:1px 6px;border-radius:5px;color:var(--ink)}
+
+/* Pied */
+.final{background:var(--surface);border-top:1px solid var(--line)}
+.final .wrap{padding-block:clamp(56px,8vw,100px);display:grid;gap:24px;justify-items:start}
+.final h2{max-width:44rem}
+.final p{color:var(--ink-2);max-width:38rem}
+.foot{border-top:1px solid var(--line);background:var(--surface)}
+.foot .wrap{padding-block:28px 40px;display:grid;gap:18px}
+@media (min-width:800px){.foot .wrap{grid-template-columns:auto 1fr auto;align-items:center;gap:32px}}
+.foot p{color:var(--ink-2);font-size:.93rem}
+.contact{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.95rem}
+.contact code{font-family:var(--mono);background:var(--paper-2);padding:4px 9px;border-radius:7px;user-select:all}
+.copy{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 12px;font:700 .82rem var(--body);cursor:pointer}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 18z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h11l2-8H6.2"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></symbol>
+  <symbol id="i-meal" viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM12 3v4M8 5v2M16 5v2"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-finger" viewBox="0 0 24 24"><path d="M6.5 7.5A7 7 0 0 1 19 12v1.5M5 11.5v1a14 14 0 0 1-1 5M8.5 9.5a4 4 0 0 1 7 2.5v2a12 12 0 0 1-1.2 5.5M12 12v2.5a9 9 0 0 1-1.6 5.2M8.5 13.5a11 11 0 0 1-1.2 5"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-checkc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></symbol>
+  <symbol id="i-bus" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3"/><circle cx="8" cy="14.5" r=".8"/><circle cx="16" cy="14.5" r=".8"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4"/><rect x="5" y="12" width="14" height="9"/><path d="M12 8v13M12 8C10 4 6 4 6 6.5S10 8 12 8zm0 0c2-4 6-4 6-1.5S14 8 12 8z"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5"/></symbol>
+  <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1A10 10 0 0 1 22 12a14 14 0 0 1-3 3.6M6.6 6.6A14 14 0 0 0 2 12s3.5 7 10 7a9 9 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+  <symbol id="i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l2-3h4l2 3"/><circle cx="12" cy="13.5" r="3.5"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.5-6.5z"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/></symbol>
+  <symbol id="i-coins" viewBox="0 0 24 24"><ellipse cx="9" cy="7" rx="6" ry="3"/><path d="M3 7v4c0 1.7 2.7 3 6 3s6-1.3 6-3V7M3 11v4c0 1.7 2.7 3 6 3 1 0 2-.1 2.8-.4"/><circle cx="17" cy="16" r="4"/></symbol>
+  <symbol id="i-radar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 5h16l-6 7.5V19l-4 2v-8.5z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#haut" aria-label="Firmin Assistant, retour en haut">
+      <span class="plaque plaque-sm">Firmin</span><span>Assistant</span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#journee">Une journée</a>
+      <a href="#fonctions">Fonctionnalités</a>
+      <a href="#economies">Économies</a>
+      <a href="#securite">Sécurité</a>
+      <a href="#fonctionnement">Fonctionnement</a>
+      <a href="#prix">Prix</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="top-actions">
+      <button class="theme-btn" id="theme-btn" type="button" aria-label="Basculer entre thème clair et sombre">
+        <svg class="ico sun"><use href="#i-sun"/></svg><svg class="ico moon"><use href="#i-moon"/></svg>
+      </button>
+      <a class="btn btn-primary btn-sm" href="#prix">Acheter</a>
+    </div>
+  </div>
+</header>
+
+<main id="haut">
+
+<!-- 1. HERO -->
+<section class="hero" aria-labelledby="h1">
+  <div class="wrap">
+    <div class="hero-copy">
+      <div class="name-row">
+        <span class="plaque plaque-xl" aria-live="off"><span class="nm" id="plaque-name">Firmin</span></span>
+        <p class="name-note">Firmin, c'est son prénom par défaut. Votre famille peut l'appeler comme elle veut.</p>
+      </div>
+      <h1 id="h1">La maison tourne.<span>Vous soufflez.</span></h1>
+      <p class="hero-sub"><strong>Firmin, votre assistant</strong>, est une IA personnelle pour toute la famille. Il tient l'agenda, les courses, les repas et les papiers, et vous prévient au bon moment. Il est installé sur votre propre serveur : vos données restent chez vous.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#prix">Acheter la licence</a>
+        <a class="btn btn-ghost" href="#fonctionnement">Voir comment ça marche</a>
+      </div>
+      <ul class="proof">
+        <li><svg class="ico"><use href="#i-check"/></svg>Paiement unique par foyer</li>
+        <li><svg class="ico"><use href="#i-check"/></svg>Code source livré</li>
+        <li><svg class="ico"><use href="#i-check"/></svg>Installation guidée en 15 minutes</li>
+      </ul>
+    </div>
+
+    <figure class="chat" aria-label="Exemple de conversation : le brief du matin" style="margin:0">
+      <div class="chat-h">
+        <span class="avatar" aria-hidden="true">F</span>
+        <div><b>Firmin</b><small><span class="online"></span>Famille, en ligne</small></div>
+      </div>
+      <div class="chat-b">
+        <span class="daychip">Mardi 18 novembre, 07:15</span>
+        <div class="brief">
+          <div class="brief-top">
+            <b>Bonjour Alice</b>
+            <button class="listen" id="listen" type="button" aria-pressed="false"><svg class="ico"><use href="#i-speaker"/></svg><span>Écouter</span></button>
+          </div>
+          <p class="listen-note" id="listen-note" hidden></p>
+          <div class="cards">
+            <div class="c">
+              <span class="c-t"><svg class="ico"><use href="#i-cloud"/></svg>Météo</span>
+              <span class="c-v">11° à 17°</span>
+              <span class="c-d">Pluie vers 18 h. Un K-way pour le foot de Tom.</span>
+            </div>
+            <div class="c">
+              <span class="c-t"><svg class="ico"><use href="#i-cal"/></svg>Aujourd'hui</span>
+              <ul><li><b>08:30</b>École, Bruno dépose</li><li><b>12:30</b>Déjeuner client</li><li><b>18:00</b>Foot de Tom</li></ul>
+            </div>
+            <div class="c">
+              <span class="c-t"><svg class="ico"><use href="#i-cart"/></svg>Courses</span>
+              <span class="c-v">7 articles</span>
+              <span class="c-d">Lait, œufs et pain en tête de liste.</span>
+            </div>
+            <div class="c">
+              <span class="c-t"><svg class="ico"><use href="#i-meal"/></svg>Repas</span>
+              <span class="c-v">Gratin de courge</span>
+              <span class="c-d">Mardi : pâtes maison, comme d'habitude.</span>
+            </div>
+          </div>
+        </div>
+        <div class="msg me"><span class="vx">Message vocal</span>Ajoute du beurre et rappelle-moi l'assurance ce soir.</div>
+        <div class="msg bot">Beurre ajouté, 8 articles. Je te reparle de l'assurance habitation à 18 h : elle se renouvelle le 1er décembre.</div>
+      </div>
+      <div class="composer" aria-hidden="true"><span>Écrire à Firmin…</span><i><svg class="ico"><use href="#i-mic"/></svg></i></div>
+    </figure>
+  </div>
+</section>
+
+<!-- 2. UNE JOURNÉE -->
+<section class="sec" id="journee" aria-labelledby="t-journee">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Une journée avec votre assistant</p>
+      <h2 id="t-journee">Six moments où il vous évite d'y penser</h2>
+      <p class="lede">Un mardi ordinaire chez Alice et Bruno, deux enfants, un chien. Les prénoms sont fictifs, les situations sont celles de toutes les familles.</p>
+    </div>
+
+    <ol class="day">
+      <li class="moment">
+        <span class="m-time">07:15</span>
+        <div class="m-text">
+          <h3>Le brief du matin, lu à voix haute</h3>
+          <p>Pendant le petit-déjeuner, Bruno demande à Firmin de lire le brief. Météo, rendez-vous du jour, ce qui manque dans le frigo, une échéance qui approche. Chacun reçoit le sien, avec ses propres rendez-vous.</p>
+          <div class="legend"><span class="lt">Brief <span class="st livre"></span></span><span class="lt">Lecture à voix haute <span class="st encours"></span></span></div>
+        </div>
+        <div class="m-demo">
+          <div class="mini">
+            <div class="msg me" style="justify-self:end">Lis-moi le brief.</div>
+            <div class="msg bot">
+              <div class="wave" aria-hidden="true"><i style="height:40%"></i><i style="height:80%;animation-delay:.1s"></i><i style="height:60%;animation-delay:.2s"></i><i style="height:100%;animation-delay:.3s"></i><i style="height:55%;animation-delay:.4s"></i><i style="height:85%;animation-delay:.5s"></i><i style="height:45%;animation-delay:.6s"></i><i style="height:70%;animation-delay:.7s"></i></div>
+              « Bonjour Bruno. Trois choses aujourd'hui : l'école à 8 h 30, ton dentiste à 16 h, et le foot de Tom à 18 h. Pense au K-way. »
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li class="moment">
+        <span class="m-time">08:04</span>
+        <div class="m-text">
+          <h3>« Il est où mon bus ? »</h3>
+          <p>Nina part au collège. Firmin connaît son trajet habituel et lit les horaires en temps réel. Il ne signale un retard que s'il change vraiment quelque chose.</p>
+          <span class="st encours"></span>
+        </div>
+        <div class="m-demo">
+          <div class="mini">
+            <div class="msg me" style="justify-self:end">Il est où mon bus ?</div>
+            <div class="msg bot bus">
+              <div class="bus-row"><span>Ligne 12, vers le centre</span><b>7 min</b></div>
+              <div class="track" aria-hidden="true"></div>
+              <div class="bus-row"><span class="late">Retard annoncé : 3 min</span><span>Suivant dans 22 min</span></div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li class="moment">
+        <span class="m-time">12:30</span>
+        <div class="m-text">
+          <h3>Les repas de la semaine, validés en un geste</h3>
+          <p>Votre abonnement de plats cuisinés ouvre le menu. Firmin propose la sélection selon les goûts de chacun, sans refaire ce que vous avez eu ces dernières semaines. Bruno valide depuis son téléphone, la commande est enregistrée sur le site.</p>
+          <span class="st livre"></span>
+        </div>
+        <div class="m-demo">
+          <div class="mini">
+            <div class="msg bot">
+              <p style="margin-bottom:8px">18 plats pour la livraison de jeudi. Je valide ?</p>
+              <ol class="dish">
+                <li><b>Dahl de lentilles corail</b> ×2, les enfants aiment</li>
+                <li><b>Saumon, riz basmati</b>, favori d'Alice</li>
+                <li><b>Parmentier de canard</b>, découverte</li>
+                <li>et 15 autres plats</li>
+              </ol>
+            </div>
+            <div class="mini-row"><span class="chipbtn on">Valider</span><span class="chipbtn">Modifier</span></div>
+            <span class="okline"><svg class="ico"><use href="#i-checkc"/></svg>Validé par Bruno à 12:31, sélection enregistrée.</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="moment">
+        <span class="m-time">18:00</span>
+        <div class="m-text">
+          <h3>L'assurance arrive à échéance</h3>
+          <p>Le contrat d'assurance habitation se renouvelle le 1er décembre. Firmin le rappelle à temps et propose de comparer. Vous choisissez, il prépare la suite, rien n'est signé sans vous.</p>
+          <div class="legend"><span class="lt">Rappel <span class="st livre"></span></span><span class="lt">Comparatif <span class="st encours"></span></span></div>
+        </div>
+        <div class="m-demo">
+          <div class="mini">
+            <div class="msg bot">Ton assurance habitation se renouvelle dans 13 jours. J'ai comparé trois offres à garanties équivalentes :</div>
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead><tr><th>Offre</th><th class="num">Par an</th><th class="num">Franchise</th></tr></thead>
+                <tbody>
+                  <tr><td>Contrat actuel</td><td class="num">412 €</td><td class="num">150 €</td></tr>
+                  <tr class="best"><td>Offre B</td><td class="num">348 €</td><td class="num">150 €</td></tr>
+                  <tr><td>Offre C</td><td class="num">365 €</td><td class="num">100 €</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li class="moment">
+        <span class="m-time">19:20</span>
+        <div class="m-text">
+          <h3>Une photo de facture, et le carnet d'entretien est à jour</h3>
+          <p>Alice photographie la facture du garage. Firmin lit la date, le kilométrage et l'intervention, range la facture avec les papiers de la voiture et note la prochaine révision.</p>
+          <span class="st livre"></span>
+        </div>
+        <div class="m-demo">
+          <div class="mini">
+            <div class="receipt">
+              <div class="paper" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="msg bot">Facture du garage du 4 novembre : vidange et plaquettes, 62 400 km, 289 €. Rangée avec les papiers de la voiture. Prochaine révision notée pour mai.</div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li class="moment">
+        <span class="m-time">21:10</span>
+        <div class="m-text">
+          <h3>Un anniversaire, assez tôt pour l'étranger</h3>
+          <p>Claire, la marraine de Nina, vit à Montréal. Firmin prévient trois semaines avant, tient compte du délai d'envoi et propose des idées qui lui ressemblent.</p>
+          <span class="st livre"></span>
+        </div>
+        <div class="m-demo">
+          <div class="mini">
+            <div class="msg bot">Anniversaire de Claire le 12 décembre. Pour un colis vers le Canada, commande avant le 25 novembre. Trois idées d'après ce que vous m'avez dit d'elle : un livre de cuisine, un abonnement à un club de lecture, une photo encadrée des enfants.</div>
+            <div class="mini-row"><span class="chipbtn">Ajouter un rappel le 24</span><span class="chipbtn">Autres idées</span></div>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- 3. FONCTIONNALITÉS -->
+<section class="sec" id="fonctions" aria-labelledby="t-fonctions">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Fonctionnalités</p>
+      <h2 id="t-fonctions">Ce qu'il sait faire, et où on en est</h2>
+      <p class="lede">Le produit se construit par lots. Chaque fonction affiche son état réel, cette page est mise à jour à chaque livraison.</p>
+      <div class="legend" aria-label="Légende des états">
+        <span class="lt"><span class="st livre"></span>utilisable aujourd'hui</span>
+        <span class="lt"><span class="st encours"></span>en construction ou en test</span>
+        <span class="lt"><span class="st avenir"></span>prévu</span>
+      </div>
+    </div>
+
+    <article class="feat" aria-labelledby="f-conv">
+      <header class="feat-h">
+        <span class="feat-ico"><svg class="ico"><use href="#i-chat"/></svg></span>
+        <h3 id="f-conv">Conversation</h3>
+        <p>Vous lui parlez comme à quelqu'un de la maison. Par écrit ou à voix haute, seul ou dans le groupe familial.</p>
+      </header>
+      <ul class="flist">
+        <li><div><h4>Telegram, en privé ou en groupe</h4><p>Messages et vocaux, transcrits sur votre serveur. Les actions arrivent avec des boutons Valider et Annuler.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Appli web privée</h4><p>La conversation devient la page d'accueil, et les réponses arrivent en cartes : agenda, liste de courses, repas, comparatif. C'est la même conversation que sur la messagerie : commencez dans le bus, finissez sur l'ordinateur.</p></div><span class="st encours"></span></li>
+        <li><div><h4>Ouverte par votre empreinte, invisible d'Internet</h4><p>L'appli ne s'ouvre que sur vos propres appareils, reliés à votre serveur par un réseau privé (Tailscale). Pas de mot de passe : une passkey, déverrouillée par l'empreinte ou le visage.</p></div><span class="st encours"></span></li>
+        <li><div><h4>Voix : lecture et micro</h4><p>Le brief se lit d'un geste. Vous dictez au lieu de taper.</p></div><span class="st encours"></span></li>
+        <li><div><h4>Enregistrement de réunions</h4><p>Réunion de parents d'élèves, rendez-vous chez le notaire : il enregistre, résume et propose les échéances et les rendez-vous à créer.</p></div><span class="st encours"></span></li>
+        <li><div><h4>Mot d'appel « Ok Firmin »</h4><p>Le prénom que vous avez choisi devient le mot pour l'appeler.</p></div><span class="st avenir"></span></li>
+        <li><div><h4>Android, via les routines</h4><p>Un raccourci ou une routine du téléphone envoie votre demande à l'assistant.</p></div><span class="st avenir"></span></li>
+      </ul>
+    </article>
+
+    <article class="feat" aria-labelledby="f-fam">
+      <header class="feat-h">
+        <span class="feat-ico"><svg class="ico"><use href="#i-users"/></svg></span>
+        <h3 id="f-fam">Famille</h3>
+        <p>Un fil commun, et un espace à soi pour chaque adulte.</p>
+      </header>
+      <ul class="flist">
+        <li><div><h4>Agenda Famille et un agenda par personne</h4><p>Il lit les agendas que vous utilisez déjà (Google Agenda ou tout agenda au format iCal).</p></div><span class="st livre"></span></li>
+        <li><div><h4>Événements privés</h4><p>Un événement marqué privé n'apparaît ni dans l'agenda de l'autre, ni dans son brief.</p></div><span class="st encours"></span></li>
+        <li><div><h4>Brief du jour et brief de la semaine</h4><p>Personnalisés pour chacun, envoyés à l'heure que vous choisissez.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Journal du foyer, avec photos</h4><p>Le plombier est passé, la première dent est tombée : une ligne datée, une photo, retrouvables plus tard.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Mémoire partagée, lisible par vous</h4><p>Goûts, habitudes, règles de la maison sont rangés dans de simples fichiers texte (Markdown) que vous pouvez relire et corriger. Chaque modification est historisée.</p></div><span class="st livre"></span></li>
+      </ul>
+    </article>
+
+    <article class="feat" aria-labelledby="f-mai">
+      <header class="feat-h">
+        <span class="feat-ico"><svg class="ico"><use href="#i-home"/></svg></span>
+        <h3 id="f-mai">Maison</h3>
+        <p>Les petites choses qui s'empilent, rangées au fil de l'eau.</p>
+      </header>
+      <ul class="flist">
+        <li><div><h4>Liste de courses partagée</h4><p>Ajout à la voix, rangement par rayon, cochée en magasin.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Le total de la liste, selon le jour</h4><p>Ce que coûtera votre liste dans votre magasin, et le jour où elle coûte nettement moins cher. <a href="#economies">Voir plus bas</a>.</p></div><span class="st avenir"></span></li>
+        <li><div><h4>Vos tickets de caisse, lus pour vous</h4><p>Envoyés en photo ou en PDF, puis lus dans votre boîte mail en lecture seule : il apprend ce que vous achetez vraiment, et à quel prix.</p></div><span class="st avenir"></span></li>
+        <li><div><h4>Repas livrés</h4><p>Il lit le menu de votre abonnement de plats cuisinés, propose la sélection selon vos goûts et l'enregistre après votre validation.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Planning des repas de la semaine</h4><p>Plats livrés, classiques maison, soirs d'invités, restaurant : une seule vue, et les courses qui vont avec.</p></div><span class="st encours"></span></li>
+        <li><div><h4>Échéances administratives</h4><p>Assurances, contrôle technique, impôts, vaccins du chien. Rappels à 30, 7 et 1 jour.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Actions sur les échéances</h4><p>Comparer les offres, trouver un créneau libre dans votre agenda, préparer la prise de rendez-vous.</p></div><span class="st encours"></span></li>
+        <li><div><h4>Fichiers et photos rangés en carnets</h4><p>Une facture de garage complète le carnet de la voiture, une ordonnance du vétérinaire celui du chien.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Anniversaires et cadeaux</h4><p>Une alerte assez tôt pour un envoi postal, à l'étranger compris, avec des idées de cadeau.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Domotique</h4><p>Chauffage, volets, consommation : des réglages simples, toujours confirmés.</p></div><span class="st avenir"></span></li>
+      </ul>
+    </article>
+
+    <article class="feat" aria-labelledby="f-cap">
+      <header class="feat-h">
+        <span class="feat-ico"><svg class="ico"><use href="#i-plug"/></svg></span>
+        <h3 id="f-cap">Capacités</h3>
+        <p>Une capacité est un plugin : un savoir-faire qu'on branche ou qu'on débranche, et que l'assistant peut fabriquer lui-même. Chacune est faite des mêmes cinq pièces :</p>
+        <div class="anatomy" role="list">
+          <div role="listitem"><b>Savoir-faire</b><span>quand et comment s'en servir</span></div>
+          <div role="listitem"><b>Connecteur</b><span>le lien avec le site ou le service</span></div>
+          <div role="listitem"><b>Commandes</b><span>par exemple /bus dans la conversation</span></div>
+          <div role="listitem"><b>Tâches planifiées</b><span>un rappel le mercredi, une mise à jour la nuit</span></div>
+          <div role="listitem"><b>Test de santé</b><span>vérifié en continu, vous êtes prévenu s'il casse</span></div>
+        </div>
+      </header>
+      <ul class="flist">
+        <li><div><h4>Repas livrés</h4><p>Menu, sélection, validation, historique des plats et de vos avis.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Bus en temps réel</h4><p>Prochains passages, retards, trajet habituel de chacun.</p></div><span class="st encours"></span></li>
+        <li><div><h4>Cantine et école</h4><p>Menus de la cantine, inscriptions, informations de l'école.</p></div><span class="st avenir"></span></li>
+        <li><div><h4>Coiffeur et rendez-vous en ligne</h4><p>Créneaux libres croisés avec votre agenda, réservation après votre accord.</p></div><span class="st avenir"></span></li>
+        <li><div><h4>Une capacité fabriquée à la demande</h4><p>« Tu peux gérer les réservations du club de tennis ? » Il écrit le plugin, le teste et le laisse en mode essai, en lecture seule, jusqu'à ce que vous validiez sa première action. Ses mots de passe, il les demande au coffre : il ne les voit jamais.</p></div><span class="st avenir"></span></li>
+        <li><div><h4>Routines de veille</h4><p>Une capacité peut surveiller pour vous : les promotions de la semaine sur vos articles habituels, les offres des garages un mois avant la révision de la voiture, les assurances avant l'échéance. Le résultat arrive dans le brief, pas en notification.</p></div><span class="st avenir"></span></li>
+        <li><div><h4>Le filtre « ça vaut le coup »</h4><p>Il ne propose une automatisation que si elle vous évite vraiment un aller-retour. Pas d'alerte pour un bus en retard de deux minutes, pas de promo à −5 %.</p></div><span class="st livre"></span></li>
+        <li><div><h4>Activer, désactiver, régler en parlant</h4><p>Chaque capacité s'allume et s'éteint sans toucher au reste. « Rappelle-moi le menu le mardi plutôt » suffit : le réglage est reformulé, validé d'un bouton et peut s'annuler.</p></div><span class="st encours"></span></li>
+      </ul>
+    </article>
+
+    <article class="feat" aria-labelledby="f-pro">
+      <header class="feat-h">
+        <span class="feat-ico"><svg class="ico"><use href="#i-brief"/></svg></span>
+        <h3 id="f-pro">Espace pro, par personne</h3>
+        <p>Votre travail reste à part, dans un espace que personne d'autre ne voit.</p>
+      </header>
+      <ul class="flist">
+        <li><div><h4>Espace cloisonné</h4><p>Ce que vous y mettez n'apparaît jamais dans le fil familial ni chez votre conjoint.</p></div><span class="st avenir"></span></li>
+        <li><div><h4>LinkedIn dans votre ton</h4><p>Des brouillons de publications écrits comme vous écrivez, que vous relisez avant de publier.</p></div><span class="st avenir"></span></li>
+        <li><div><h4>Veille</h4><p>Un résumé régulier des sources et des sujets que vous suivez.</p></div><span class="st avenir"></span></li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<!-- 3 bis. COMBIEN ÇA RAPPORTE -->
+<section class="sec" id="economies" aria-labelledby="t-eco">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Combien ça rapporte</p>
+      <h2 id="t-eco">Un assistant doit se rembourser. Et le prouver.</h2>
+      <p class="lede">Afficher « −10 % » ne vous fait rien gagner. Firmin répondra à trois questions d'argent, à partir de vos vrais achats, et tiendra le compte de ce qu'il vous fait réellement économiser.</p>
+      <div class="legend"><span class="lt">Toute cette section <span class="st avenir"></span></span></div>
+    </div>
+
+    <div class="roi">
+      <ul class="levers">
+        <li class="lever">
+          <span class="feat-ico"><svg class="ico"><use href="#i-cart"/></svg></span>
+          <h3>Combien va coûter ma liste, et quel jour ?</h3>
+          <p>Il estime le total de votre liste dans votre magasin, jour par jour, avec les promotions datées de la semaine. Il ne vous parle d'un autre jour que s'il est nettement moins cher, et chaque estimation affiche sa marge d'erreur.</p>
+          <div class="mini">
+            <span class="ex">Exemple fictif</span>
+            <div class="tbl-wrap">
+              <table class="tbl wrap-last">
+                <thead><tr><th>Jour</th><th class="num">Total estimé</th><th>Pourquoi</th></tr></thead>
+                <tbody>
+                  <tr><td>Samedi, d'habitude</td><td class="num">≈ 86 € ± 5</td><td>prix de la semaine</td></tr>
+                  <tr class="best"><td>Mercredi</td><td class="num">≈ 79 € ± 3</td><td>3 promos commencent</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </li>
+        <li class="lever">
+          <span class="feat-ico"><svg class="ico"><use href="#i-tag"/></svg></span>
+          <h3>Cet article habituel est-il en vraie promo ?</h3>
+          <p>Il sait ce que vous achetez souvent. Quand l'un de ces articles manque à la liste et passe vraiment moins cher que le prix que vous payez d'habitude (au moins 25 %, ou 3 € sur votre quantité habituelle), il vous propose de l'ajouter. Trois suggestions par semaine au plus, dans le brief.</p>
+          <div class="mini">
+            <div class="msg bot">Le café que vous prenez toutes les trois semaines est à −34 % jusqu'à dimanche. Je l'ajoute à la liste ?</div>
+            <div class="mini-row"><span class="chipbtn on">Ajouter</span><span class="chipbtn">Pas cette fois</span></div>
+          </div>
+        </li>
+        <li class="lever">
+          <span class="feat-ico"><svg class="ico"><use href="#i-coins"/></svg></span>
+          <h3>Combien m'a-t-il fait gagner ?</h3>
+          <p>Un compteur, en euros, de ce que ses suggestions vous ont fait économiser. Sa règle de calcul est publique, et elle est volontairement stricte.</p>
+        </li>
+      </ul>
+
+      <aside class="gain" aria-label="Compteur d'économies, fonctionnalité à venir">
+        <div class="gain-top"><span class="gain-label">Économisé grâce à Firmin</span><span class="st avenir"></span></div>
+        <div class="gain-amount">— €<small>Pas de chiffre d'exemple ici. Le premier sera le vôtre.</small></div>
+        <div class="formula"><b>Économie = prix habituel − prix payé</b><span>Le prix habituel, c'est celui que vous avez réellement payé ces derniers mois, pas le prix barré du magasin. Le prix payé vient de votre ticket de caisse.</span></div>
+        <div class="incl">
+          <div class="yes">
+            <h4>Compté</h4>
+            <ul>
+              <li><svg class="ico"><use href="#i-check"/></svg>Les suggestions que vous avez acceptées</li>
+              <li><svg class="ico"><use href="#i-check"/></svg>Les promos du « meilleur jour » quand vous l'avez suivi</li>
+              <li><svg class="ico"><use href="#i-check"/></svg>Les pertes aussi, si le prix payé est plus haut</li>
+            </ul>
+          </div>
+          <div class="no">
+            <h4>Jamais compté</h4>
+            <ul>
+              <li><svg class="ico"><use href="#i-minus"/></svg>Une promo que vous auriez eue sans lui</li>
+              <li><svg class="ico"><use href="#i-minus"/></svg>La cagnotte fidélité non dépensée</li>
+              <li><svg class="ico"><use href="#i-minus"/></svg>Une estimation que le ticket ne confirme pas</li>
+            </ul>
+          </div>
+        </div>
+        <p class="sources-note"><svg class="ico"><use href="#i-info"/></svg><span>Il lit les prix publics de votre magasin quand son site le permet, sans contourner aucune protection, et vos tickets de caisse. Il n'achète rien et ne remplit aucun panier.</span></p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 4. SÉCURITÉ -->
+<section class="sec band" id="securite" aria-labelledby="t-securite">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Sécurité et vie privée</p>
+      <h2 id="t-securite">Votre vie de famille ne sort pas de chez vous</h2>
+      <p class="lede">Un assistant qui connaît vos rendez-vous, vos papiers et vos habitudes doit être tenu court. Voici les règles qu'il suit, et ce qui les fait respecter.</p>
+    </div>
+    <div class="sec-grid">
+      <div class="sg"><svg class="ico"><use href="#i-server"/></svg><h3>Vos données sur votre serveur</h3><p>Mémoire, fichiers, journal et listes vivent sur votre VPS. Pas de compte chez nous, pas de serveur chez nous.</p><span class="st livre"></span></div>
+      <div class="sg"><svg class="ico"><use href="#i-archive"/></svg><h3>Sauvegardes chiffrées</h3><p>Chaque nuit, chiffrées, 30 jours d'historique. La restauration est documentée pas à pas.</p><span class="st livre"></span></div>
+      <div class="sg"><svg class="ico"><use href="#i-key"/></svg><h3>L'IA ne voit jamais un secret</h3><p>Les mots de passe des sites sont dans un coffre chiffré sur votre serveur. L'assistant n'en manipule que des références ; toute valeur du coffre est masquée avant de lui parvenir.</p><span class="st livre"></span></div>
+      <div class="sg"><svg class="ico"><use href="#i-filter"/></svg><h3>Un filtre avant l'IA, avec preuve</h3><p>Numéro de carte, IBAN, numéro de sécurité sociale : remplacés par un repère avant d'être envoyés au modèle. Vous voyez exactement ce qui est parti.</p><span class="st avenir"></span></div>
+      <div class="sg"><svg class="ico"><use href="#i-phone"/></svg><h3>Une appli fermée à Internet</h3><p>Aucun port ouvert : l'appli n'est joignable que depuis vos appareils, par un réseau privé. Connexion par passkey, et nouvelle vérification de l'empreinte pour toute action sensible.</p><span class="st encours"></span></div>
+      <div class="sg"><svg class="ico"><use href="#i-finger"/></svg><h3>Documents sensibles chiffrés de bout en bout</h3><p>Pièces d'identité, carnets de santé : déverrouillés par votre empreinte ou votre visage (passkey). Illisibles sur le serveur, jamais envoyés sur Telegram.</p><span class="st avenir"></span></div>
+      <div class="sg"><svg class="ico"><use href="#i-checkc"/></svg><h3>Votre accord avant toute action</h3><p>Ajouter un rendez-vous, enregistrer une commande, envoyer un message : rien ne part sans votre « Valider ».</p><span class="st livre"></span></div>
+      <div class="sg"><svg class="ico"><use href="#i-card"/></svg><h3>Jamais de paiement sans vous</h3><p>Aucun paiement n'est possible aujourd'hui. Quand ils arriveront, chacun passera par vous et par la validation 3-D Secure de votre banque.</p><span class="st avenir"></span></div>
+      <div class="sg"><svg class="ico"><use href="#i-users"/></svg><h3>Chacun chez soi</h3><p>Chaque adulte a sa licence IA et ses conversations. Événements privés, espace pro, pièces d'identité : chacun garde ce qui le concerne.</p><span class="st encours"></span></div>
+    </div>
+
+    <div class="vault">
+      <div style="display:grid;gap:12px">
+        <h3 style="color:var(--plaque-ink)">Ce que l'IA ne voit jamais</h3>
+        <p>Vos mots de passe, vos codes et vos documents d'identité. Quand une capacité a besoin de se connecter à un site, elle demande au coffre. Le modèle d'IA reçoit seulement le résultat, et toute valeur secrète est masquée avant de lui parvenir.</p>
+        <p>Quand un identifiant manque, une carte de saisie s'ouvre dans l'appli, après votre empreinte. Ce que vous tapez va directement au coffre, sans passer par la conversation.</p>
+      </div>
+      <div class="vault-card" aria-label="Illustration de la carte de saisie sécurisée">
+        <h4><svg class="ico"><use href="#i-lock"/></svg>Identifiants du coiffeur en ligne</h4>
+        <div class="field">Adresse e-mail<div>alice@exemple.fr</div></div>
+        <div class="field">Mot de passe<div>••••••••••••</div></div>
+        <div class="vault-foot"><span><svg class="ico"><use href="#i-shield"/></svg>Envoyé au coffre, invisible pour l'assistant</span><span class="st encours"></span></div>
+      </div>
+    </div>
+
+    <div class="vault">
+      <div style="display:grid;gap:12px">
+        <h3 style="color:var(--plaque-ink)">Ce qui part vers l'IA, vous le voyez</h3>
+        <p>Il arrive qu'on colle un numéro de carte ou un IBAN dans un message, ou qu'un ticket de caisse en contienne un. Avant tout envoi au modèle, un filtre local repère ces données et les remplace par un repère. Sous votre message, une ligne montre ce qui a réellement été transmis.</p>
+      </div>
+      <div class="filter-card" aria-label="Illustration du filtre de données sensibles, fonctionnalité à venir">
+        <h4><svg class="ico"><use href="#i-filter"/></svg>Filtre des données sensibles</h4>
+        <div class="fl-step">Vous écrivez<div class="msg me">Ma carte 4970 1000 0000 1234 a été débitée deux fois au supermarché. Aide-moi à écrire à la banque.</div></div>
+        <div class="fl-step">Transmis à Firmin<div class="fl-sent">Ma carte <span class="redact">[carte bancaire ••1234]</span> a été débitée deux fois au supermarché. Aide-moi à écrire à la banque.</div></div>
+        <div class="vault-foot"><span><svg class="ico"><use href="#i-shield"/></svg>Le numéro complet reste sur votre serveur</span><span class="st avenir"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. COMMENT ÇA MARCHE -->
+<section class="sec" id="fonctionnement" aria-labelledby="t-fonc">
+  <div class="wrap how">
+    <div class="sec-head" style="margin-bottom:0">
+      <p class="kicker">Comment ça marche</p>
+      <h2 id="t-fonc">Un serveur à vous, une IA que vous choisissez</h2>
+      <p class="lede">Vous parlez à Firmin par Telegram ou par l'appli web. Le cœur de l'assistant tourne sur votre VPS, avec la mémoire, le coffre et les capacités. Pour réfléchir, il s'appuie sur votre propre licence d'IA.</p>
+    </div>
+
+    <div class="diagram" role="img" aria-label="Schéma : vous et votre famille échangez avec des canaux (Telegram, appli web, voix), reliés au cœur conversationnel installé sur votre VPS avec les capacités, la mémoire et le coffre ; le cœur interroge votre licence IA, hors du VPS.">
+      <svg class="dg-desktop" viewBox="0 0 1000 300" aria-hidden="true">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ar-head" d="M0 0L10 5L0 10z"/></marker>
+        </defs>
+        <rect class="vps" x="398" y="34" width="404" height="236" rx="18"/>
+        <text class="vps-t" x="418" y="62">Votre VPS</text>
+        <text class="vps-s" x="418" y="252">Ubuntu 24.04, sauvegardes chiffrées chaque nuit</text>
+
+        <rect class="n-box" x="8" y="108" width="150" height="94" rx="14"/>
+        <text class="n-t" x="26" y="144">Vous</text>
+        <text class="n-s" x="26" y="166">et votre famille</text>
+        <text class="n-s" x="26" y="184">texte ou voix</text>
+
+        <rect class="n-box" x="200" y="108" width="160" height="94" rx="14"/>
+        <text class="n-t" x="218" y="144">Canaux</text>
+        <text class="n-s" x="218" y="166">Telegram</text>
+        <text class="n-s" x="218" y="184">appli web, voix</text>
+
+        <rect class="n-box n-core" x="420" y="108" width="164" height="94" rx="14"/>
+        <text class="n-core-t" x="438" y="144">Cœur</text>
+        <text class="n-core-s" x="438" y="166">conversation,</text>
+        <text class="n-core-s" x="438" y="184">confirmations, journal</text>
+
+        <rect class="n-box" x="616" y="108" width="166" height="94" rx="14"/>
+        <text class="n-t" x="634" y="144">Capacités</text>
+        <text class="n-s" x="634" y="166">mémoire, coffre</text>
+        <text class="n-s" x="634" y="184">repas, bus, carnets</text>
+
+        <rect class="n-box" x="836" y="108" width="156" height="94" rx="14"/>
+        <text class="n-t" x="852" y="144">Licence IA</text>
+        <text class="n-s" x="852" y="166">Claude aujourd'hui</text>
+        <text class="n-s" x="852" y="184">d'autres à venir</text>
+
+        <path class="ar" d="M162 155H196" marker-start="url(#ah)" marker-end="url(#ah)"/>
+        <path class="ar" d="M364 155H416" marker-start="url(#ah)" marker-end="url(#ah)"/>
+        <path class="ar" d="M588 155H612" marker-start="url(#ah)" marker-end="url(#ah)"/>
+        <path class="ar" d="M786 155H832" marker-start="url(#ah)" marker-end="url(#ah)"/>
+      </svg>
+
+      <svg class="dg-mobile" viewBox="0 0 340 560" aria-hidden="true">
+        <defs>
+          <marker id="ahm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ar-head" d="M0 0L10 5L0 10z"/></marker>
+        </defs>
+        <rect class="n-box" x="60" y="2" width="220" height="62" rx="14"/>
+        <text class="n-t" x="78" y="28">Vous</text>
+        <text class="n-s" x="78" y="49">et votre famille, texte ou voix</text>
+
+        <rect class="n-box" x="60" y="96" width="220" height="62" rx="14"/>
+        <text class="n-t" x="78" y="122">Canaux</text>
+        <text class="n-s" x="78" y="143">Telegram, appli web, voix</text>
+
+        <rect class="vps" x="6" y="190" width="328" height="250" rx="18"/>
+        <text class="vps-t" x="24" y="216">Votre VPS</text>
+        <rect class="n-box n-core" x="40" y="230" width="260" height="66" rx="14"/>
+        <text class="n-core-t" x="58" y="257">Cœur</text>
+        <text class="n-core-s" x="58" y="279">conversation, confirmations, journal</text>
+        <rect class="n-box" x="40" y="330" width="260" height="66" rx="14"/>
+        <text class="n-t" x="58" y="357">Capacités</text>
+        <text class="n-s" x="58" y="379">mémoire, coffre, repas, bus</text>
+        <text class="vps-s" x="24" y="426">Sauvegardes chiffrées chaque nuit</text>
+
+        <rect class="n-box" x="60" y="476" width="220" height="68" rx="14"/>
+        <text class="n-t" x="78" y="503">Licence IA</text>
+        <text class="n-s" x="78" y="525">Claude aujourd'hui, d'autres à venir</text>
+
+        <path class="ar" d="M170 68V92" marker-start="url(#ahm)" marker-end="url(#ahm)"/>
+        <path class="ar" d="M170 162V226" marker-start="url(#ahm)" marker-end="url(#ahm)"/>
+        <path class="ar" d="M170 300V326" marker-start="url(#ahm)" marker-end="url(#ahm)"/>
+        <path class="ar" d="M170 444V472" marker-start="url(#ahm)" marker-end="url(#ahm)"/>
+      </svg>
+    </div>
+
+    <div class="how-cols">
+      <div>
+        <h3>Open source d'abord</h3>
+        <p>Firmin Assistant est construit sur des briques libres et éprouvées. Vous pouvez tout inspecter, et rien ne dépend d'une start-up qui pourrait disparaître.</p>
+        <ul class="oss">
+          <li>Ubuntu</li><li>Python</li><li>SQLite</li><li>Git <small>historique de la mémoire</small></li>
+          <li>faster-whisper <small>transcription locale</small></li><li>restic <small>sauvegardes</small></li>
+          <li>Vaultwarden <small>coffre</small></li><li>Playwright</li><li>Caddy</li><li>ufw et fail2ban</li>
+          <li>Tailscale <small>accès privé à l'appli</small></li><li>Passkeys <small>WebAuthn</small></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Les seuls tiers, et pourquoi</h3>
+        <ul class="third">
+          <li><svg class="ico"><use href="#i-spark"/></svg><span><b>Votre fournisseur d'IA.</b> Il reçoit la conversation et les informations utiles pour répondre, sous votre propre compte.</span></li>
+          <li><svg class="ico"><use href="#i-send"/></svg><span><b>Telegram, si vous l'utilisez.</b> L'appli web, qui tourne sur votre serveur, permet de s'en passer.</span></li>
+          <li><svg class="ico"><use href="#i-phone"/></svg><span><b>Tailscale, pour l'appli web.</b> Il relie vos appareils à votre serveur ; les échanges sont chiffrés de bout en bout entre eux, Tailscale ne les lit pas.</span></li>
+          <li><svg class="ico"><use href="#i-cal"/></svg><span><b>Vos agendas, si vous les branchez.</b> Lecture de vos agendas existants, sans les déplacer.</span></li>
+          <li><svg class="ico"><use href="#i-cart"/></svg><span><b>Les sites de vos magasins, en lecture.</b> Pour les prix publics, à petite dose, sans compte et sans rien acheter.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. PRÉREQUIS -->
+<section class="sec" id="prerequis" aria-labelledby="t-prer">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Prérequis</p>
+      <h2 id="t-prer">Ce qu'il vous faut pour commencer</h2>
+      <p class="lede">Pas de matériel à acheter, pas de compétence de développeur. Un installateur guidé pose les questions et fait le reste.</p>
+    </div>
+    <ul class="req">
+      <li><span class="feat-ico"><svg class="ico"><use href="#i-server"/></svg></span><div><h3>Un VPS Linux</h3><p>Ubuntu 24.04, 2 vCPU et 4 Go de mémoire. Environ 5 à 10 € par mois chez un hébergeur comme Hostinger ou OVH.</p></div></li>
+      <li><span class="feat-ico"><svg class="ico"><use href="#i-spark"/></svg></span><div><h3>Une licence IA par adulte</h3><p>Claude Pro, Max ou Ultra (utilisé via Claude Code), ou une clé API Anthropic. Gemini CLI et Codex : à venir.</p></div></li>
+      <li><span class="feat-ico"><svg class="ico"><use href="#i-send"/></svg></span><div><h3>Un bot Telegram gratuit</h3><p>Créé en deux minutes, guidé par l'installateur.</p></div></li>
+      <li><span class="feat-ico"><svg class="ico"><use href="#i-phone"/></svg></span><div><h3>Tailscale sur vos téléphones</h3><p>Pour ouvrir l'appli web en privé. L'offre personnelle est gratuite, l'installateur vous guide.</p></div></li>
+      <li><span class="feat-ico"><svg class="ico"><use href="#i-clock"/></svg></span><div><h3>15 minutes</h3><p>Du serveur vierge au premier message. L'installateur crée les comptes, la sécurité et les sauvegardes.</p></div></li>
+      <li><span class="feat-ico"><svg class="ico"><use href="#i-code"/></svg></span><div><h3>Aucun code à écrire</h3><p>Quelques commandes à copier-coller une fois. Ensuite, tout se règle en conversation.</p></div></li>
+    </ul>
+
+    <div class="cost">
+      <h3>Coût mensuel indicatif, pour un foyer de deux adultes</h3>
+      <div class="cost-wrap">
+        <table>
+          <thead><tr><th scope="col">Poste</th><th scope="col">Par mois</th></tr></thead>
+          <tbody>
+            <tr><td>Serveur VPS<small>2 vCPU, 4 Go, Ubuntu 24.04</small></td><td>5 à 10 €</td></tr>
+            <tr><td>Licences IA, deux adultes<small>Claude Pro, environ 20 € par personne</small></td><td>≈ 40 €</td></tr>
+            <tr><td>Tâches programmées<small>briefs et rappels via une clé API, selon l'usage</small></td><td>0 à 5 €</td></tr>
+            <tr><td>Bot Telegram</td><td>gratuit</td></tr>
+            <tr><td>Tailscale, accès à l'appli<small>offre personnelle</small></td><td>gratuit</td></tr>
+          </tbody>
+          <tfoot><tr><td>Total indicatif</td><td>≈ 45 à 55 €</td></tr></tfoot>
+        </table>
+      </div>
+      <p class="fine">Tarifs des éditeurs à titre indicatif, à vérifier au moment de l'achat. Un abonnement Max coûte plus cher et sert aux usages intensifs. La licence Firmin Assistant se paie une fois et n'apparaît pas dans ce tableau.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7. PRIX -->
+<section class="sec" id="prix" aria-labelledby="t-prix">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Prix</p>
+      <h2 id="t-prix">Une licence, payée une fois, pour tout le foyer</h2>
+    </div>
+    <div class="price">
+      <div class="ticket">
+        <div class="ticket-top">
+          <h3>Licence Firmin Assistant</h3>
+          <p>Paiement unique, par foyer.</p>
+        </div>
+        <div class="amount" aria-label="Prix à fixer">— €<small>prix à fixer</small></div>
+        <div class="incl">
+          <div class="yes">
+            <h4>Inclus</h4>
+            <ul>
+              <li><svg class="ico"><use href="#i-check"/></svg>Le code source complet</li>
+              <li><svg class="ico"><use href="#i-check"/></svg>12 mois de mises à jour</li>
+              <li><svg class="ico"><use href="#i-check"/></svg>L'installateur guidé</li>
+              <li><svg class="ico"><use href="#i-check"/></svg>La documentation</li>
+            </ul>
+          </div>
+          <div class="no">
+            <h4>Non inclus</h4>
+            <ul>
+              <li><svg class="ico"><use href="#i-minus"/></svg>Le serveur VPS</li>
+              <li><svg class="ico"><use href="#i-minus"/></svg>Les licences IA</li>
+            </ul>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="buy" type="button" aria-expanded="false" aria-controls="buy-note">Acheter la licence</button>
+        <p class="buy-note" id="buy-note" hidden>Le paiement en ligne ouvrira avec la version 1.0. En attendant, écrivez-nous à l'adresse en bas de page pour réserver votre licence : vous serez prévenu dès l'ouverture.</p>
+      </div>
+
+      <div class="lots">
+        <div class="wip-note"><svg class="ico"><use href="#i-info"/></svg><p><strong>Produit en cours de construction.</strong> Cette page est mise à jour à chaque lot livré. Ce que vous lisez ici est l'état réel du produit.</p></div>
+        <div class="lot-col">
+          <span class="st livre"></span>
+          <ul>
+            <li><b>Lot 1</b><span>Socle, Telegram et briefs<small>agenda, courses, échéances, anniversaires, mémoire, sauvegardes</small></span></li>
+            <li><b>Lot 2</b><span>Repas livrés<small>sélection proposée, validée, enregistrée sur le site</small></span></li>
+            <li><b>Lot 3</b><span>Photos et documents<small>carnets voiture et animal, journal avec photos</small></span></li>
+          </ul>
+        </div>
+        <div class="lot-col">
+          <span class="st encours"></span>
+          <ul>
+            <li><b>Lot 4</b><span>Appli web privée<small>serveur, passkeys et accès privé faits ; interface en test auprès des premiers foyers</small></span></li>
+            <li><b>Lot 5</b><span>Capacités, coffre, bus en temps réel<small>plugins activables, coffre chiffré, réglages en conversation</small></span></li>
+            <li><b>Lot 6</b><span>Produit installable par tous<small>installateur, configuration, choix du fournisseur d'IA</small></span></li>
+          </ul>
+        </div>
+        <div class="lot-col next">
+          <span class="st avenir"></span>
+          <ul>
+            <li><span>Courses et promos<small>total par jour, vraies promos, compteur d'économies</small></span></li>
+            <li><span>Filtre des données sensibles avant l'IA</span></li>
+            <li><span>Routines de veille et capacités fabriquées par l'assistant</span></li>
+            <li><span>Documents sensibles chiffrés</span></li>
+            <li><span>Domotique</span></li>
+            <li><span>Espace pro</span></li>
+            <li><span>Paiements avec 3-D Secure</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. FAQ -->
+<section class="sec" id="faq" aria-labelledby="t-faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Questions fréquentes</p>
+      <h2 id="t-faq">Avant d'acheter</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>Pourquoi « Firmin » ? Peut-on changer son prénom ?</summary>
+        <div class="ans"><p>Firmin est le prénom par défaut. À l'installation, votre famille choisit celui qu'elle veut : il apparaît partout, dans les messages, les briefs et l'appli, et servira de mot d'appel (« Ok Odette », « Ok Basile »). Vous pouvez le changer plus tard.</p></div>
+      </details>
+      <details>
+        <summary>Puis-je l'installer sur mon ordinateur plutôt que sur un VPS ?</summary>
+        <div class="ans"><p>Oui, si c'est une machine sous Linux (Ubuntu 24.04 conseillé) allumée en permanence, comme un mini-PC. Un ordinateur portable qui se met en veille interrompt les briefs, les rappels et les réponses. Pour la plupart des foyers, un VPS à 5–10 € par mois reste la solution la plus simple et la plus fiable.</p></div>
+      </details>
+      <details>
+        <summary>Faut-il savoir coder ?</summary>
+        <div class="ans"><p>Non. L'installateur vous guide et vous fait copier-coller quelques commandes, une seule fois. Ensuite, tout se règle en conversation. Si vous aimez bricoler, le code source complet est livré, lisible et testé.</p></div>
+      </details>
+      <details>
+        <summary>Quelles licences IA puis-je utiliser ?</summary>
+        <div class="ans"><p>Aujourd'hui, Claude : un abonnement <strong>Pro, Max ou Ultra</strong>, utilisé via Claude Code (chaque adulte connecte son propre compte), ou une <strong>clé API Anthropic</strong>. Gemini CLI et Codex sont prévus : l'architecture est prête, l'intégration est à venir.</p></div>
+      </details>
+      <details>
+        <summary>Mes données partent-elles chez un tiers ?</summary>
+        <div class="ans"><p>Elles sont stockées sur votre serveur. Ce qui en sort : le texte de la conversation et les informations utiles à la réponse, envoyés à votre fournisseur d'IA sous votre compte, et les messages eux-mêmes si vous passez par Telegram. Les vocaux sont transcrits sur votre serveur. Avec l'appli web, Tailscale relie vos appareils à votre serveur mais ne lit pas les échanges, chiffrés de bout en bout. Firmin Assistant ne nous envoie rien : pas de compte chez nous, pas de statistiques d'usage.</p></div>
+      </details>
+      <details>
+        <summary>Que voit l'IA, exactement ?</summary>
+        <div class="ans"><p>Ce que vous lui écrivez, et ce que ses outils lui lisent pour vous répondre : un extrait d'agenda, la liste de courses, une ligne de la mémoire. Jamais vos mots de passe : ils restent dans le coffre et toute valeur du coffre est masquée avant de lui parvenir. Les documents sensibles chiffrés (à venir) ne lui seront jamais lisibles.</p><p>À venir aussi : un filtre local qui remplace numéros de carte, IBAN ou numéro de sécurité sociale par un repère avant l'envoi, et une ligne sous votre message qui montre ce qui a été transmis, par exemple « transmis à Firmin : [carte bancaire ••1234] ».</p></div>
+      </details>
+      <details>
+        <summary>Comment ouvrir l'appli web sans l'exposer sur Internet ?</summary>
+        <div class="ans"><p>L'appli tourne sur votre serveur, qui n'ouvre aucun port pour elle. Vos téléphones et ordinateurs la rejoignent par un réseau privé, Tailscale, installé une fois sur chaque appareil. On s'y connecte avec une passkey, déverrouillée par l'empreinte ou le visage, sans mot de passe ; une action sensible (saisir un identifiant, valider un réglage) redemande l'empreinte.</p><p>C'est la même conversation que sur Telegram : ce que vous avez demandé dans l'une se retrouve dans l'autre.</p></div>
+      </details>
+      <details>
+        <summary>Combien Firmin peut-il me faire économiser ?</summary>
+        <div class="ans"><p>Nous ne donnerons pas de chiffre avant de l'avoir mesuré. Le compteur d'économies, à venir avec la capacité courses et promos, affichera ce que vous avez réellement gagné : <strong>prix que vous payez d'habitude moins prix payé</strong>, d'après vos tickets, seulement sur les achats que l'assistant vous a suggérés. Les promos que vous auriez eues sans lui ne comptent pas, et un achat payé plus cher que d'habitude compte en négatif.</p></div>
+      </details>
+      <details>
+        <summary>Va-t-il naviguer sur les sites des magasins ?</summary>
+        <div class="ans"><p>Pour les prix, oui, et seulement en lecture : quelques dizaines de pages par semaine, limitées aux produits que vous achetez, sur le site de votre magasin quand ses conditions le permettent. Il ne contourne aucune protection anti-robot : si un site le bloque, il s'appuie sur vos tickets de caisse et vous le dit. Il ne crée pas de compte, ne remplit pas de panier et n'achète rien.</p></div>
+      </details>
+      <details>
+        <summary>Puis-je utiliser WhatsApp ?</summary>
+        <div class="ans"><p>Pas aujourd'hui. WhatsApp n'offre pas de bot simple et gratuit pour une famille : il faut un compte professionnel payant et un numéro dédié. Telegram fonctionne dès maintenant, et l'appli web privée est en test. Les canaux sont séparés du cœur de l'assistant, ce qui permettra d'en ajouter d'autres.</p></div>
+      </details>
+      <details>
+        <summary>Plusieurs personnes ? Des invités ?</summary>
+        <div class="ans"><p>Chaque adulte a son propre accès, son espace et sa licence IA. Les enfants n'ont pas de compte par défaut : leurs activités vont dans l'agenda Famille. Un rôle « invité » est prévu dans la configuration pour un accès restreint, par exemple pour une personne qui garde les enfants.</p></div>
+      </details>
+      <details>
+        <summary>Que se passe-t-il si mon VPS est piraté ?</summary>
+        <div class="ans">
+          <p>Tout est fait pour que ça n'arrive pas : seul l'accès SSH est ouvert, les tentatives répétées sont bloquées, les mises à jour de sécurité sont automatiques, et l'assistant n'ouvre aucun port vers l'extérieur. Les identifiants sont chiffrés dans le coffre et les documents sensibles (à venir) seront chiffrés de bout en bout.</p>
+          <p>Soyons clairs : quelqu'un qui prendrait le contrôle complet du serveur pourrait lire la mémoire et les listes. La procédure dans ce cas est documentée : changer les mots de passe, déconnecter les comptes IA, réinstaller sur un serveur neuf et restaurer la dernière sauvegarde saine.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Comment fonctionnent les sauvegardes et la restauration ?</summary>
+        <div class="ans"><p>Une sauvegarde chiffrée est faite chaque nuit et conservée 30 jours. Par défaut elle est stockée sur le serveur ; nous recommandons d'en ajouter une copie ailleurs (un stockage en ligne ou un disque chez vous). La restauration, y compris sur un nouveau serveur, est décrite pas à pas. Gardez la clé de sauvegarde dans votre gestionnaire de mots de passe : sans elle, la sauvegarde est illisible, pour vous aussi.</p></div>
+      </details>
+      <details>
+        <summary>Peut-il payer ou téléphoner à ma place ?</summary>
+        <div class="ans"><p><strong>Payer :</strong> non. Aujourd'hui aucune dépense n'est possible. Quand les paiements arriveront, chacun sera préparé par l'assistant, puis validé par vous et par la vérification 3-D Secure de votre banque. Il ne verra jamais votre carte.</p><p><strong>Téléphoner :</strong> pas pour l'instant. Il prépare l'appel : le numéro, vos créneaux libres, ce qu'il faut dire.</p></div>
+      </details>
+      <details>
+        <summary>En quelle langue parle-t-il ?</summary>
+        <div class="ans"><p>En français, avec tutoiement ou vouvoiement selon votre choix. Le modèle comprend d'autres langues si un membre de la famille préfère écrire en anglais ou en espagnol, mais les consignes, les briefs et l'interface sont écrits en français.</p></div>
+      </details>
+      <details>
+        <summary>Comment se passent les mises à jour, et le support ?</summary>
+        <div class="ans"><p>La licence inclut 12 mois de mises à jour, installées en une commande, avec un journal des changements. Après 12 mois, votre version continue de fonctionner. Le support se fait par e-mail, avec la documentation complète ; les délais de réponse seront précisés à l'ouverture des ventes.</p></div>
+      </details>
+      <details>
+        <summary>Puis-je ajouter mes propres capacités ?</summary>
+        <div class="ans"><p>Oui. Une capacité est un plugin : un manifeste qui déclare ce dont elle a besoin (identifiants, sites autorisés, tâches planifiées, réglages), du code, et un test de santé. Une commande crée le squelette, prêt à remplir et à tester, et une capacité s'exporte pour être partagée. Bientôt, vous pourrez la demander directement à l'assistant : il l'écrira et la laissera en mode essai, en lecture seule, jusqu'à votre première validation.</p></div>
+      </details>
+      <details>
+        <summary>Que se passe-t-il si j'arrête mon abonnement Claude ?</summary>
+        <div class="ans"><p>L'assistant ne peut plus répondre à la personne concernée. Vos données restent intactes sur votre serveur, lisibles en fichiers texte. Vous pouvez passer à une clé API (paiement à l'usage) ou, quand ils seront disponibles, à un autre fournisseur d'IA, sans rien perdre.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- 9. PIED DE PAGE -->
+<section class="final" aria-labelledby="t-final">
+  <div class="wrap">
+    <span class="plaque plaque-sm">Firmin</span>
+    <h2 id="t-final">Votre maison, votre assistant, votre serveur.</h2>
+    <p>Firmin, votre assistant, s'installe en 15 minutes et garde vos données chez vous. Une licence, payée une fois, pour toute la famille.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#prix">Acheter la licence</a>
+      <a class="btn btn-ghost" href="#faq">Lire les questions fréquentes</a>
+    </div>
+  </div>
+</section>
+
+<footer class="foot" id="contact">
+  <div class="wrap">
+    <a class="brand" href="#haut"><span class="plaque plaque-sm">Firmin</span><span>Assistant</span></a>
+    <div style="display:grid;gap:6px;min-width:0">
+      <p><strong style="color:var(--ink)">Code source ouvert (licence Apache 2.0), paiement unique pour l'installation guidée, le paquet prêt à l'emploi et le support.</strong> Firmin est le prénom par défaut de l'assistant, chaque foyer peut le renommer.</p>
+      <p>Page mise à jour le 7 novembre 2026, lots 1 à 3 livrés. Les exemples de cette page sont fictifs.</p>
+    </div>
+    <div class="contact">
+      <span>Contact :</span><code id="mail">contact@firmin-assistant.fr</code><button class="copy" id="copy" type="button">Copier</button>
+      <span class="fine">adresse provisoire</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+
+  /* Thème : système par défaut, bascule mémorisée localement si possible */
+  try { var saved = localStorage.getItem('firmin-theme'); if (saved === 'light' || saved === 'dark') root.setAttribute('data-theme', saved); } catch(e) {}
+  document.getElementById('theme-btn').addEventListener('click', function(){
+    var cur = root.getAttribute('data-theme');
+    if (!cur) cur = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('firmin-theme', next); } catch(e) {}
+  });
+
+  /* Plaque : le prénom change pour montrer qu'il se choisit */
+  var names = ['Firmin','Odette','Basile','Jeanne','Marcel','Firmin'];
+  var el = document.getElementById('plaque-name'), i = 0;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce && el) {
+    var timer = setInterval(function(){
+      i++;
+      if (i >= names.length) { clearInterval(timer); return; }
+      el.classList.add('out');
+      setTimeout(function(){ el.textContent = names[i]; el.classList.remove('out'); }, 350);
+    }, 2200);
+  }
+
+  /* Écouter : lecture du brief si le navigateur sait le faire */
+  var btn = document.getElementById('listen'), note = document.getElementById('listen-note');
+  var text = "Bonjour Alice. Nous sommes mardi 18 novembre. Il fera de 11 à 17 degrés, avec de la pluie vers 18 heures : prévois un K-way pour le foot de Tom. Aujourd'hui : l'école à 8 heures 30, Bruno dépose ; un déjeuner client à 12 heures 30 ; le foot de Tom à 18 heures. Sept articles sur la liste de courses. Ce soir, gratin de courge.";
+  btn.addEventListener('click', function(){
+    var s = window.speechSynthesis;
+    if (!s || typeof SpeechSynthesisUtterance === 'undefined') { note.textContent = 'Lecture vocale non disponible sur ce navigateur.'; note.hidden = false; return; }
+    if (btn.getAttribute('aria-pressed') === 'true') { s.cancel(); return; }
+    var u = new SpeechSynthesisUtterance(text); u.lang = 'fr-FR'; u.rate = 1.02;
+    var v = (s.getVoices() || []).filter(function(x){ return /^fr/i.test(x.lang); })[0]; if (v) u.voice = v;
+    var reset = function(){ btn.setAttribute('aria-pressed','false'); btn.querySelector('span').textContent = 'Écouter'; };
+    u.onend = reset; u.onerror = reset;
+    btn.setAttribute('aria-pressed','true'); btn.querySelector('span').textContent = 'Arrêter';
+    try { s.cancel(); s.speak(u); } catch(e) { reset(); note.textContent = 'Lecture vocale non disponible sur ce navigateur.'; note.hidden = false; }
+  });
+
+  /* Acheter : le paiement n'est pas encore ouvert, on le dit */
+  var buy = document.getElementById('buy'), buyNote = document.getElementById('buy-note');
+  buy.addEventListener('click', function(){ var open = buyNote.hidden; buyNote.hidden = !open; buy.setAttribute('aria-expanded', String(open)); });
+
+  /* Copier l'adresse de contact */
+  var copy = document.getElementById('copy'), mail = document.getElementById('mail');
+  copy.addEventListener('click', function(){
+    var done = function(){ copy.textContent = 'Copié'; setTimeout(function(){ copy.textContent = 'Copier'; }, 1600); };
+    var fallback = function(){ var r = document.createRange(); r.selectNodeContents(mail); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); };
+    try { navigator.clipboard.writeText(mail.textContent).then(done, fallback); } catch(e) { fallback(); }
+  });
+})();
+</script>
+</body>
+</html>

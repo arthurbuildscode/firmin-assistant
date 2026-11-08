@@ -1,0 +1,11 @@
+[Unit]
+Description=Firmin Assistant - timer mise à jour du navigateur (mensuelle)
+
+[Timer]
+# Le 2 du mois à 05:15 : après la sauvegarde et le redémarrage automatique, avant le brief du jour.
+OnCalendar=*-*-02 05:15:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=Firmin Assistant - mise à jour de Playwright/Chromium (version épinglée) et test Kitchen Daily
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# root : écrit dans /opt/playwright et dans le venv ; le test Kitchen Daily tourne ensuite sous homeos.
+User=root
+WorkingDirectory=/srv/home-os
+EnvironmentFile=-/etc/homeos/telegram.env
+Environment=HOMEOS_DATA=/srv/home-os/data
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+ExecStart=/srv/home-os/scripts/maj-navigateur.sh
+TimeoutStartSec=30min
+PrivateTmp=yes

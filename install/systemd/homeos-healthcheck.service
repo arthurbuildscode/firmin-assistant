@@ -1,0 +1,32 @@
+[Unit]
+Description=Firmin Assistant - healthcheck
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+UMask=0002
+Type=oneshot
+User=homeos
+Group=foyer
+WorkingDirectory=/srv/home-os
+# Secret au strict besoin : token Telegram (alertes)
+EnvironmentFile=-/etc/homeos/telegram.env
+Environment=HOMEOS_DATA=/srv/home-os/data
+Environment=HOMEOS_ETAT=/var/lib/homeos
+Environment=HOMEOS_SECRETS=/etc/homeos
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+Environment=DISABLE_AUTOUPDATER=1
+Environment=CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+# Proxy sortant filtrant, seulement si install.sh --filtrer-sortant l'a activé
+EnvironmentFile=-/etc/default/homeos-proxy
+ExecStart=/srv/home-os/scripts/healthcheck.sh
+# Durcissement (lot 5d) : le healthcheck lance « sudo -u <personne> claude auth status », donc ni
+# NoNewPrivileges ni aucune option qui l'implique (PrivateDevices, RestrictAddressFamilies,
+# SystemCallArchitectures, LockPersonality, RestrictRealtime, ProtectKernelModules, RestrictSUIDSGID).
+ProtectSystem=strict
+ReadWritePaths=/srv/home-os/data -/var/lib/homeos /home -/var/log/sudo-homeos.log -/run/sudo
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+MemoryMax=2500M
+TasksMax=512

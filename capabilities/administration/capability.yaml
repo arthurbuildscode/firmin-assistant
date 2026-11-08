@@ -1,0 +1,26 @@
+# Capacité « Administration » (lot 7a) : régler le système en parlant à l'assistant. Contrat : CONTRACT.md §9.
+# La logique est dans tools/administration.py (aussi utilisée par /admin) et tools/config_edition.py
+# (écriture validée, sauvegardée, journalisée et annulable de data/config.yaml).
+nom: administration
+titre: Administration
+description: Régler le système en conversation (capacités, horaires, validation, pause), avec journal et retour arrière.
+version: 1
+statut: actif
+origine: humain
+prefixe: admin            # outils et actions admin_* (au lieu de administration_*)
+personnes: []             # tout le foyer, mais chaque outil vérifie le rôle « proprietaire » (config.yaml)
+secrets: []
+crons: []
+# Changements avec effet : bouton Valider (sauf si capacites.administration.validation: automatique, déconseillé).
+actions_avec_effet:
+  - admin_capacite_activer
+  - admin_capacite_desactiver
+  - admin_capacite_retirer   # lot 7b : capacité fabriquée par l'atelier
+  - admin_validation
+  - admin_cron
+  - admin_pause
+  - admin_reprendre
+  - admin_annuler
+reseau: []
+commandes_telegram: []    # /admin est une commande de base du bot (état du système)
+parametres: []

@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "homeos": {
+      "command": "/srv/home-os/.venv/bin/python",
+      "args": [
+        "-m",
+        "tools.server"
+      ],
+      "env": {
+        "HOMEOS_ROOT": "/srv/home-os",
+        "HOMEOS_DATA": "/srv/home-os/data",
+        "HOMEOS_ETAT": "/var/lib/homeos",
+        "HOMEOS_SECRETS": "/etc/homeos",
+        "PYTHONPATH": "/srv/home-os",
+        "PLAYWRIGHT_BROWSERS_PATH": "/opt/playwright",
+        "DISABLE_AUTOUPDATER": "1",
+        "NO_PROXY": "127.0.0.1,localhost,::1"
+      }
+    }
+  }
+}

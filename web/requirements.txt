@@ -1,0 +1,9 @@
+# Appli web (lot 4a) : backend FastAPI + SSE, passkeys WebAuthn. Open source (MIT / BSD / Apache-2.0).
+fastapi>=0.115
+sse-starlette>=2.1
+webauthn>=2.2,<4
+python-multipart>=0.0.9
+uvicorn>=0.30
+# Notifications Web Push (lot 4b) : chiffrement aes128gcm et VAPID (MPL-2.0).
+pywebpush>=2.0,<3
+# Synthèse vocale : Piper est installé à part dans /opt/piper (install.sh), jamais dans ce venv.

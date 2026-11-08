@@ -1,0 +1,40 @@
+[Unit]
+Description=Firmin Assistant - test de restauration mensuel (restic restore + vérifications)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+UMask=0002
+Type=oneshot
+User=homeos
+Group=foyer
+WorkingDirectory=/srv/home-os
+EnvironmentFile=-/etc/homeos/restic.env
+Environment=HOMEOS_DATA=/srv/home-os/data
+Environment=HOMEOS_ETAT=/var/lib/homeos
+Environment=HOMEOS_SECRETS=/etc/homeos
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+Environment=DISABLE_AUTOUPDATER=1
+Environment=CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+# Proxy sortant filtrant, seulement si install.sh --filtrer-sortant l'a activé
+EnvironmentFile=-/etc/default/homeos-proxy
+ExecStart=/srv/home-os/scripts/restaurer-test.sh
+TimeoutStartSec=3h
+# Durcissement (lot 5d, audit point 6) : oneshot sans sudo, profil strict.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/home-os/data -/var/lib/homeos
+ProtectHome=tmpfs
+BindPaths=/home/homeos
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+MemoryMax=1500M
+TasksMax=256
+ReadWritePaths=/var/backups/homeos

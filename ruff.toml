@@ -1,0 +1,3 @@
+# Ruff (0.16+, règles par défaut). Lignes longues tolérées dans le dépôt : 120 évite que le tri des imports
+# replie les imports suivis d'un « # type: ignore[...] ».
+line-length = 120

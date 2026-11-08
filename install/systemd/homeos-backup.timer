@@ -1,0 +1,11 @@
+[Unit]
+Description=Firmin Assistant - timer sauvegarde restic
+
+[Timer]
+# Valeur fixe (non lue dans config.yaml)
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=30
+
+[Install]
+WantedBy=timers.target

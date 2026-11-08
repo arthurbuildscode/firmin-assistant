@@ -1,0 +1,41 @@
+[Unit]
+Description=Firmin Assistant - atelier : relecture, installation en essai et message (lot 7b)
+Documentation=file:///srv/home-os/docs/atelier.md
+After=network-online.target
+
+[Service]
+# N'exécute jamais le code généré : copie figée des fichiers autorisés, contrôles statiques et ruff refaits,
+# relecteur (homeos-claude --homeos-atelier … --homeos-atelier-mode relire, lecture seule), installation en essai
+# dans /var/lib/homeos/capacites-atelier, paramètre `site`, journal, message Telegram au demandeur.
+Type=oneshot
+User=homeos
+Group=foyer
+SupplementaryGroups=homeos
+UMask=0002
+WorkingDirectory=/srv/home-os
+Environment=HOMEOS_ROOT=/srv/home-os
+Environment=HOMEOS_DATA=/srv/home-os/data
+Environment=HOMEOS_ETAT=/var/lib/homeos
+Environment=HOMEOS_SECRETS=/etc/homeos
+Environment=PYTHONPATH=/srv/home-os
+Environment=PYTHONUNBUFFERED=1
+Environment=DISABLE_AUTOUPDATER=1
+EnvironmentFile=-/etc/homeos/telegram.env
+EnvironmentFile=-/etc/default/homeos-proxy
+ExecStart=/srv/home-os/.venv/bin/python -m tools.atelier conclure
+TimeoutStartSec=1200
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/home-os/data /var/lib/homeos
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+MemoryMax=768M

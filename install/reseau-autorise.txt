@@ -1,0 +1,34 @@
+# Firmin Assistant — hôtes joignables par homeos et les personnes quand le filtrage sortant est actif
+# (install.sh --filtrer-sortant, audit point 8). Un hôte par ligne ; « *.domaine » autorise aussi les
+# sous-domaines. Les hôtes déclarés par les capacités chargées (`reseau:` des manifestes,
+# `python -m tools.capacites reseau`) sont ajoutés automatiquement. Après modification : relancer install.sh.
+# Root (apt, npm, pip, install.sh) n'est pas filtré.
+
+# Claude Code (code.claude.com/docs/en/network-config) : API, connexion claude.ai, échange et
+# rafraîchissement des jetons OAuth. La télémétrie non essentielle et les connecteurs claude.ai sont coupés
+# (CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC, ENABLE_CLAUDEAI_MCP_SERVERS=false) : pas d'autre hôte nécessaire.
+api.anthropic.com
+claude.ai
+platform.claude.com
+
+# Telegram (bot, alertes)
+api.telegram.org
+
+# Agendas iCal Google
+calendar.google.com
+
+# Sauvegarde hors site : Google Drive via rclone (restic copy)
+www.googleapis.com
+oauth2.googleapis.com
+content.googleapis.com
+accounts.google.com
+
+# Météo et géocodage du brief (Open-Meteo, sans clé)
+api.open-meteo.com
+geocoding-api.open-meteo.com
+
+# Notifications Web Push de l'appli (lot 4b) : services de push des navigateurs (contenu chiffré de bout en bout)
+fcm.googleapis.com
+updates.push.services.mozilla.com
+*.push.apple.com
+*.notify.windows.com

@@ -1,0 +1,28 @@
+# Capacité « Salon démo », fabriquée par l'atelier (lot 7b) à partir de la demande :
+# « ajoute le salon démo pour prendre les rendez-vous coiffeur ». Contrat : CONTRACT.md §9.
+nom: salon_demo
+titre: Salon démo
+description: Rendez-vous coiffeur sur le site du salon — créneaux libres, réservation après validation.
+version: 1
+statut: essai              # l'atelier installe toujours en essai : première action validée à la main → actif
+origine: assistant
+personnes: []
+secrets:
+  - cle: salon_demo/personne   # par personne : salon_demo/<linux_user>, saisi dans la carte sécurisée de l'appli
+    type: identifiants
+    champs: [identifiant, mot_de_passe]
+    par_personne: true
+crons: []                  # pas de routine : la demande ne parle pas de surveiller des créneaux
+actions_avec_effet: [salon_demo_reserver]
+confirmation_toujours: [salon_demo_reserver]   # toute action à effet attend toujours le bouton Valider
+reseau: ["127.0.0.1"]
+commandes_telegram: []
+parametres:
+  - cle: site
+    type: texte
+    question: Quelle est l'adresse du site du salon ?
+    obligatoire: true
+  - cle: prestation
+    type: texte
+    question: Quelle prestation réserves-tu d'habitude (coupe, couleur…) ?
+    obligatoire: false

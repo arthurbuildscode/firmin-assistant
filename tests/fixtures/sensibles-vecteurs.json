@@ -1,0 +1,33 @@
+{
+ "cmd": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+ "kid": "6465666768696a6b6c6d6e6f70717273",
+ "prf": "030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dc",
+ "sel": "05101b26313c47525d68737e89949faab5c0cbd6e1ecf7020d18232e39444f5a",
+ "kek_appareil": "010e1b2835424f5c697683909daab7c4d1deebf805121f2c394653606d7a8794",
+ "credential_id": "yMnKy8zNzs_Q0dLT1NXW1w",
+ "iv_document": "000102030405060708090a0b",
+ "iv_enveloppe": "0c0d0e0f1011121314151617",
+ "iv_appareil": "18191a1b1c1d1e1f20212223",
+ "meta": {
+  "nom": "passeport-é.pdf",
+  "type": "application/pdf",
+  "taille": 30
+ },
+ "contenu": "255044462d312e37207061737365706f7274206465207465737420e900ff",
+ "kek_prf": "f2ec85e2eeec9cbfdebf4825ce2d28f1ded9b3f848512600ce8eb25d0cc702c1",
+ "document": "48534231016465666768696a6b6c6d6e6f70717273000102030405060708090a0b4702d624bec7ac74e063ada9c1880b1ee6a6e84684569cd5161781e33f4522c67860cbde95e373e804c8168ee9f34157807610e93cf48ff84bf643757486d7d4c30cbb5f8395604c2d7a9d4e9fee7d9b5dfaa6100243370ddd89fbbf0cd0508d348d0bb35c354f6c2e798bd517c36c217e",
+ "enveloppe_prf": {
+  "type": "prf",
+  "credential_id": "yMnKy8zNzs_Q0dLT1NXW1w",
+  "sel": "BRAbJjE8R1JdaHN-iZSfqrXAy9bh7PcCDRgjLjlET1o",
+  "iv": "DA0ODxAREhMUFRYX",
+  "cle_chiffree": "Znodz-GlVMZZAUB5B0JXEQgZzJROcmy5ui4CxCqB343gBpSpKjZMaxFuuQifuLgk"
+ },
+ "enveloppe_appareil": {
+  "type": "appareil",
+  "kid": "6465666768696a6b6c6d6e6f70717273",
+  "iv": "GBkaGxwdHh8gISIj",
+  "cle_chiffree": "WE7_OvB9E-9vcViPHqaizXQhRVE7cEPu6UOuVtpfzKFR7aZdGkV9bZ8tThbSdlzJ"
+ },
+ "phrase": "000G4-0R40M-30E20-9185G-R38E1-W8124-GK2GA-HC5RR-34D1P-70X3R-FP638"
+}

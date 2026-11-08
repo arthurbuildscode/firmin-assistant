@@ -1,0 +1,14 @@
+{
+ "instanceDepuisSecondes": 2,
+ "appelsDerniereMinute": 2,
+ "memoirePartagee": false,
+ "variablesStockage": [],
+ "fluxEnPause": [],
+ "dernieresErreurs": [
+  {
+   "quand": "2026-11-07T15:09:24.379Z",
+   "appel": "EX_1/1",
+   "erreur": "fetch failed"
+  }
+ ]
+}

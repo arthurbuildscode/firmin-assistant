@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prochain bus</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <a class="retour" id="retour" href="/">‹ Ligne</a>
+  <div class="titre-arret"><span id="badge-ligne"></span><h1 id="nom">Chargement…</h1></div>
+  <p class="commune" id="commune"></p>
+
+  <nav class="sens" id="sens"></nav>
+
+  <div id="contenu"><section class="carte vide">Chargement des horaires…</section></div>
+  <noscript><section class="carte vide">Active JavaScript pour voir les horaires.</section></noscript>
+
+  <div id="autres"></div>
+  <p class="liens-bas"><a href="/">Toutes les lignes</a><a id="lien-qr" href="#">QR code de cet arrêt</a></p>
+  <p class="pied" id="pied"></p>
+</main>
+<script>
+// Si le script plante (navigateur trop ancien…), on l'affiche au lieu d'une page vide.
+window.addEventListener("error", function () {
+  var c = document.getElementById("contenu");
+  if (c && /Chargement/.test(c.textContent)) c.innerHTML = '<section class="carte vide">Ton navigateur n’a pas pu afficher la page. Essaie de la recharger, ou mets à jour le navigateur.</section>';
+});
+</script>
+<script>
+const [, , ligneId, sensId, arretId] = location.pathname.split("/");
+const $ = (s) => document.getElementById(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let ligne = {};
+let tr = {}; // état du temps réel pour cet arrêt
+
+// Dernier retard connu par course, gardé dans l'onglet (survit aux rafraîchissements et aux
+// redémarrages du serveur) : si le bus disparaît du flux avant son heure, on garde son heure plausible.
+const CLE_RETARDS = "retards-" + new Date().toDateString();
+let retards = {};
+try { retards = JSON.parse(sessionStorage.getItem(CLE_RETARDS) || "{}"); } catch (e) {}
+const hhmmVers = (h, decalage) => {
+  const [a, b] = h.split(":").map(Number);
+  const m = (((a * 60 + b + decalage) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+};
+
+function appliquerRetardsConnus(d) {
+  const maintenant = Date.now();
+  const estPasse = (p) => p.statut === "passe" || p.statut === "passe_theorique";
+  // On regarde aussi les « déjà passés » : un bus en retard dont le signal se perd après son heure
+  // théorique est classé passé par le serveur (qui ne connaît que la fiche), alors qu'il arrive encore.
+  const tous = d.passes.concat(d.prochains);
+  for (const p of tous) {
+    if (!p.course) continue;
+    if (p.estime && !p.signalPerdu && p.statut === "a_venir") retards[p.course] = { retard: p.retard, quand: maintenant, vu: p.vuA || maintenant };
+    const r = retards[p.course];
+    if (!p.estime && (p.statut === "prevu" || estPasse(p)) && r && maintenant - r.quand < 3 * 3600_000) {
+      p.estime = hhmmVers(p.prevu, r.retard);
+      p.retard = r.retard;
+      p.vuA = r.vu || r.quand;
+      p.dans = p.dans + r.retard;
+      p.statut = p.dans < -1 ? "passe" : "a_venir";
+      p.signalPerdu = p.statut === "a_venir";
+      if (p.dans < 0) p.dans = 0;
+    }
+  }
+  // un bus change de liste selon son heure la plus plausible
+  d.passes = tous.filter(estPasse).slice(-3);
+  d.prochains = tous.filter((p) => !estPasse(p)).sort((a, b) => a.dans - b.dans);
+  try { sessionStorage.setItem(CLE_RETARDS, JSON.stringify(retards)); } catch (e) {}
+}
+
+const AVERTISSEMENT = "⚠ Position du bus momentanément indisponible";
+
+// Pictogramme « en direct » (ondes radio), fixe, dans la couleur du statut : seulement si on reçoit
+// vraiment le signal du bus (pas pour un horaire de fiche, ni pour un signal perdu).
+const ONDES = `<svg class="ondes" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>`;
+const enDirect = (p) => !!p.estime && !p.signalPerdu && (p.statut === "a_venir" || p.statut === "a_l_arret");
+const avecOndes = (p, txt) => enDirect(p) ? `${ONDES}<span>${txt}</span><span class="sr">(en direct)</span>` : txt;
+
+function badge(l, grand) {
+  return `<span class="badge${grand ? " grand" : ""}" style="background:${l.couleur || "#555"};color:${l.texte || "#fff"}">${esc(l.ligne)}</span>`;
+}
+
+// Heure à afficher : l'estimée si on l'a, sinon la théorique.
+const heureBus = (p) => p.estime || p.prevu;
+// Heure mise à jour, avec l'horaire initial barré en dessous quand il a changé
+const heureAjustee = (p) => p.estime && p.estime !== p.prevu
+  ? `<span class="heure-pile"><span>${p.estime}</span><s class="ancienne">${p.prevu}</s></span>`
+  : heureBus(p);
+
+function quand(p) {
+  if (p.statut === "a_l_arret") return "À l'arrêt";
+  if (p.dans <= 0) return "Imminent";
+  if (p.dans < 60) return `dans ${p.dans} min`;
+  // passage après minuit : « demain » plutôt qu'un décompte de 17 h
+  const [hh, mm] = heureActuelle.split(":").map(Number);
+  if (hh * 60 + mm + p.dans >= 1440) return "demain";
+  const h = Math.floor(p.dans / 60), m = p.dans % 60;
+  return `dans ${h} h${m ? " " + String(m).padStart(2, "0") : ""}`;
+}
+
+// Phrase d'état + couleur
+function etat(p) {
+  switch (p.statut) {
+    case "passe": return { txt: "Passé", cls: "" };
+    case "passe_theorique": return { txt: "Passé", cls: "" };
+    case "supprime": return { txt: "Bus supprimé", cls: "grave" };
+    case "a_l_arret": return { txt: "Le bus est à l'arrêt", cls: "ok" };
+    case "prevu": return { txt: "", cls: "" }; // pas encore de signal du bus : aucune mention
+  }
+  if (p.retard > 0) return { txt: `Retard ${p.retard} min`, cls: p.retard >= 5 ? "grave" : "retard" };
+  if (p.retard < 0) return { txt: `Avance ${-p.retard} min`, cls: "retard" };
+  return { txt: "À l'heure", cls: "ok" };
+}
+
+// « Villeneuve – Zone d'activités » -> « Zone d'activités » : la ville est déjà dans l'onglet du sens
+const terminusCourt = (t) => String(t || "").split(" – ").pop();
+let unSeulTerminus = false;
+let heureActuelle = "00:00"; // heure de Paris donnée par le serveur // si tous les bus vont au même endroit, on ne le répète pas sur chaque carte
+
+function carte(p, principal) {
+  const e = etat(p);
+  return `<section class="carte ${principal ? "principal" : "suivant"}">
+    <div class="tete-carte"><span class="etiquette-carte">${principal ? "Prochain bus" : "Bus suivant"}</span>
+      ${unSeulTerminus || !p.destination ? "" : `<span class="vers-court">${badge(ligne)} Direction : ${esc(terminusCourt(p.destination))}</span>`}</div>
+    <div class="horaire"><span class="heure">${heureAjustee(p)}</span><span class="dans">${quand(p)}</span></div>
+    ${e.txt ? `<div class="statut ${e.cls}">${avecOndes(p, e.txt)}${vuHtml(p)}</div>` : ""}
+    ${p.signalPerdu ? `<p class="avert">${AVERTISSEMENT}</p>` : ""}
+  </section>`;
+}
+
+function ligneListe(p) {
+  const e = etat(p);
+  return `<li class="${p.statut.startsWith("passe") ? "passe" : ""}">
+    <span class="h">${heureAjustee(p)}</span>
+    <div>${unSeulTerminus || !p.destination ? "" : `<div class="dest">Direction : ${esc(terminusCourt(p.destination))}</div>`}${e.txt ? `<div class="info ${e.cls}">${avecOndes(p, e.txt)}</div>` : ""}${p.signalPerdu ? `<div class="info avert">${AVERTISSEMENT}</div>` : ""}${vuHtml(p)}</div>
+    <span class="dans-court">${p.statut.startsWith("passe") ? "" : quand(p)}</span></li>`;
+}
+
+let relanceFaite = false;
+
+// « il y a … » à côté de l'état d'un bus suivi : temps depuis la dernière position reçue de ce bus,
+// mis à jour chaque seconde.
+const depuis = (t) => {
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return `${s} s`;
+  if (s < 3600) return `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, "0")} s`;
+  return "plus d'une heure";
+};
+const vuHtml = (p) => p.vuA && (enDirect(p) || p.signalPerdu) ? `<span class="vu" data-t="${p.vuA}" title="Dernière position reçue">ⓘ il y a ${depuis(p.vuA)}</span>` : "";
+setInterval(() => document.querySelectorAll(".vu[data-t]").forEach((e) => { e.textContent = `ⓘ il y a ${depuis(+e.dataset.t)}`; }), 1000);
+const NB_PLUS_TARD = 4, PAS_PLUS_TARD = 6;
+let nbPlusTard = NB_PLUS_TARD; // nombre d'horaires « Plus tard » affichés (bouton « Afficher plus »)
+let derniereReponse = null;
+
+function afficherPlus() {
+  nbPlusTard += PAS_PLUS_TARD;
+  if (derniereReponse) rendreHoraires(derniereReponse);
+}
+
+function rendreHoraires(d) {
+  const [p1, p2, ...plusTard] = d.prochains;
+  let html = "";
+  if (!p1) html += `<section class="carte vide">Aucun bus prévu dans les prochaines 24 h.</section>`;
+  if (p1) html += carte(p1, true);
+  if (p2) html += carte(p2, false);
+  if (plusTard.length) html += `<h2>Plus tard</h2><section class="carte"><ul class="liste">${plusTard.slice(0, nbPlusTard).map(ligneListe).join("")}</ul>${
+    plusTard.length > nbPlusTard ? `<button class="plus" onclick="afficherPlus()">Afficher plus</button>` : ""}</section>`;
+  if (d.passes.length) html += `<details class="replie"><summary>Déjà passés (${d.passes.length})</summary><section class="carte"><ul class="liste">${d.passes.slice().reverse().map(ligneListe).join("")}</ul></section></details>`;
+  const ouvert = !!document.querySelector("details.replie[open]"); // garde l'état replié/déplié au rafraîchissement
+  $("contenu").innerHTML = html;
+  if (ouvert && document.querySelector("details.replie")) document.querySelector("details.replie").open = true;
+}
+
+async function charger() {
+  try {
+    const ctrl = new AbortController();
+    const minuteur = setTimeout(() => ctrl.abort(), 15_000);
+    const r = await fetch(`/api/passages/${ligneId}/${sensId}/${arretId}`, { signal: ctrl.signal })
+      .finally(() => clearTimeout(minuteur));
+    if (!r.ok) throw new Error(r.status === 404 ? "Arrêt inconnu" : `Erreur ${r.status}`);
+    const d = await r.json();
+    ligne = d.ligne;
+    tr = d.tempsReel;
+    appliquerRetardsConnus(d);
+    document.title = `${d.arret.nom} · ligne ${ligne.ligne} · ${d.sens.libelle}`;
+    $("retour").href = `/l/${ligne.id}?sens=${d.sens.id}`;
+    $("retour").textContent = `‹ Ligne ${ligne.ligne}`;
+    $("badge-ligne").innerHTML = badge(ligne, true);
+    $("nom").textContent = d.arret.nom;
+    $("commune").textContent = d.arret.commune;
+    const terminus = [...new Set(d.prochains.concat(d.passes).map((p) => terminusCourt(p.destination)).filter(Boolean))];
+    unSeulTerminus = terminus.length === 1;
+    heureActuelle = d.heure;
+    // onglets des sens ; l'onglet actif précise le terminus (sinon il est indiqué sur chaque bus)
+    $("sens").style.gridTemplateColumns = `repeat(${d.autresSens.length}, 1fr)`;
+    $("sens").innerHTML = d.autresSens.map((s) => !s.url
+      ? `<span class="inactif" title="Pas de départ dans ce sens à cet arrêt">${esc(s.libelle)}</span>`
+      : s.id === d.sens.id
+        ? `<a href="${s.url}" class="actif" aria-current="page">${esc(s.libelle)}${unSeulTerminus ? `<small>Direction : ${esc(terminus[0])}</small>` : ""}</a>`
+        : `<a href="${s.url}">${esc(s.libelle)}</a>`).join("");
+    $("lien-qr").href = `/qr?l=${ligne.id}&s=${d.sens.id}&a=${d.arret.id}`;
+
+    derniereReponse = d;
+    rendreHoraires(d);
+
+    $("autres").innerHTML = d.autresLignes.length ? `<h2>Autres lignes à cet arrêt</h2><div class="autres">${
+      d.autresLignes.map((l) => `<a href="${l.url}">${badge(l)} ${esc(l.sens)}</a>`).join("")}</div>` : "";
+
+    $("pied").innerHTML = (d.tempsReel.disponible && !d.tempsReel.ok ? "Temps réel momentanément indisponible.<br>" : "")
+      + "Données : La Métropole Mobilité (open data).";
+    // sans temps réel à l'ouverture, on retente une fois au bout de 15 s sans attendre le rafraîchissement (30 s)
+    if (d.tempsReel.disponible && !d.tempsReel.ok && !relanceFaite) { relanceFaite = true; setTimeout(charger, 15_000); }
+  } catch (e) {
+    const msg = e.name === "AbortError" ? "Le serveur met trop de temps à répondre." : e.message;
+    if (!ligne.ligne) { // rien n'est encore affiché : on le dit clairement
+      $("nom").textContent = "Horaires indisponibles";
+      $("contenu").innerHTML = `<section class="carte vide">${esc(msg)}<br><br><button onclick="charger()">Réessayer</button></section>`;
+    } else {
+      $("pied").textContent = `Mise à jour impossible pour le moment (${msg}). Nouvel essai dans 30 s.`;
+    }
+  }
+}
+
+charger();
+setInterval(charger, 30_000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) charger(); });
+</script>
+</body>
+</html>

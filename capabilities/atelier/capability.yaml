@@ -1,0 +1,18 @@
+# Capacité « Atelier » (lot 7b) : l'assistant fabrique lui-même une capacité à la demande d'un propriétaire du foyer.
+# Logique : tools/atelier.py (file, sous-agent Claude Code, contrôles, relecture, installation en essai).
+# Parcours et sécurité : docs/atelier.md ; contrat : CONTRACT.md §9 (« Atelier »).
+nom: atelier
+titre: Atelier
+description: Fabriquer une nouvelle capacité à la demande (« ajoute Planity pour les rendez-vous coiffeur »), installée en essai.
+version: 1
+statut: actif
+origine: humain
+personnes: []             # tout le foyer, mais chaque outil vérifie le rôle « proprietaire » (config.yaml)
+secrets: []
+crons: []
+# Lancer une fabrication et approuver un site : toujours par bouton (jamais en validation automatique).
+actions_avec_effet: [atelier_creer, atelier_approuver_reseau]
+confirmation_toujours: [atelier_creer, atelier_approuver_reseau]
+reseau: []                # les sites sont approuvés demande par demande (etat.json, reseau_approuve)
+commandes_telegram: []
+parametres: []

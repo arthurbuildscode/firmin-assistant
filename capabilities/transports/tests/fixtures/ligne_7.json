@@ -1,0 +1,417 @@
+{
+ "id": "7",
+ "ligne": "7",
+ "nom": "Villeneuve ⇄ Grandport",
+ "couleur": "#009FE3",
+ "texte": "#FFFFFF",
+ "tempsReel": true,
+ "sens": [
+  {
+   "id": "grandport",
+   "libelle": "Vers Grandport",
+   "arrets": [
+    {
+     "id": "gare-routiere-villeneuve",
+     "nom": "Gare Routière",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "lycee-victor-hugo-villeneuve",
+     "nom": "Lycée Victor Hugo",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-acacias-villeneuve",
+     "nom": "Les Acacias",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "pont-du-moulin-villeneuve",
+     "nom": "Pont du Moulin",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "college-jean-rostand-villeneuve",
+     "nom": "Collège Jean Rostand",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "le-grand-pre-villeneuve",
+     "nom": "Le Grand Pré",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-tilleuls-villeneuve",
+     "nom": "Les Tilleuls",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "le-chateau-d-eau-villeneuve",
+     "nom": "Le Château d'Eau",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-platanes-villeneuve",
+     "nom": "Les Platanes",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-peupliers-villeneuve",
+     "nom": "Les Peupliers",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "hopital-villeneuve",
+     "nom": "Hôpital",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-genets-villeneuve",
+     "nom": "Les Genêts",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "la-cascade-villeneuve",
+     "nom": "La Cascade",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "rond-point-nord-montclair",
+     "nom": "Rond-Point Nord",
+     "commune": "Montclair"
+    },
+    {
+     "id": "le-stade-montclair",
+     "nom": "Le Stade",
+     "commune": "Montclair"
+    },
+    {
+     "id": "zone-artisanale-montclair",
+     "nom": "Zone Artisanale",
+     "commune": "Montclair"
+    },
+    {
+     "id": "la-poste-montclair",
+     "nom": "La Poste",
+     "commune": "Montclair"
+    },
+    {
+     "id": "le-pre-vert-montclair",
+     "nom": "Le Pré Vert",
+     "commune": "Montclair"
+    },
+    {
+     "id": "piscine-montclair",
+     "nom": "Piscine",
+     "commune": "Montclair"
+    },
+    {
+     "id": "le-belvedere-montclair",
+     "nom": "Le Belvédère",
+     "commune": "Montclair"
+    },
+    {
+     "id": "le-viaduc-montclair",
+     "nom": "Le Viaduc",
+     "commune": "Montclair"
+    },
+    {
+     "id": "les-ecoles-montclair",
+     "nom": "Les Écoles",
+     "commune": "Montclair"
+    },
+    {
+     "id": "les-lilas-beaulieu",
+     "nom": "Les Lilas",
+     "commune": "Beaulieu"
+    },
+    {
+     "id": "la-chapelle-les-ormes",
+     "nom": "La Chapelle",
+     "commune": "Les Ormes"
+    },
+    {
+     "id": "la-croix-blanche-saint-aubin",
+     "nom": "La Croix Blanche",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "les-chenes-saint-aubin",
+     "nom": "Les Chênes",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "clinique-des-pins-saint-aubin",
+     "nom": "Clinique des Pins",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "la-fontaine-saint-aubin",
+     "nom": "La Fontaine",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "les-bruyeres-saint-aubin",
+     "nom": "Les Bruyères",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "champ-de-foire-saint-aubin",
+     "nom": "Champ de Foire",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "saint-aubin-gare-saint-aubin",
+     "nom": "Saint-Aubin Gare",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "saint-aubin-nord-saint-aubin",
+     "nom": "Saint-Aubin Nord",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "centre-saint-aubin",
+     "nom": "Centre",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "saint-aubin-sud-saint-aubin",
+     "nom": "Saint-Aubin Sud",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "les-cedres-saint-aubin",
+     "nom": "Les Cèdres",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "parc-des-sports-saint-aubin",
+     "nom": "Parc des Sports",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "centre-commercial-saint-aubin",
+     "nom": "Centre Commercial",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "les-vergers-grandport",
+     "nom": "Les Vergers",
+     "commune": "Grandport"
+    },
+    {
+     "id": "mairie-grandport",
+     "nom": "Mairie",
+     "commune": "Grandport"
+    },
+    {
+     "id": "le-lavoir-grandport",
+     "nom": "Le Lavoir",
+     "commune": "Grandport"
+    }
+   ]
+  },
+  {
+   "id": "villeneuve",
+   "libelle": "Vers Villeneuve",
+   "arrets": [
+    {
+     "id": "gare-centrale-grandport",
+     "nom": "Gare Centrale",
+     "commune": "Grandport"
+    },
+    {
+     "id": "mairie-grandport",
+     "nom": "Mairie",
+     "commune": "Grandport"
+    },
+    {
+     "id": "les-vergers-grandport",
+     "nom": "Les Vergers",
+     "commune": "Grandport"
+    },
+    {
+     "id": "les-oliviers-grandport",
+     "nom": "Les Oliviers",
+     "commune": "Grandport"
+    },
+    {
+     "id": "centre-commercial-saint-aubin",
+     "nom": "Centre Commercial",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "parc-des-sports-saint-aubin",
+     "nom": "Parc des Sports",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "les-cedres-saint-aubin",
+     "nom": "Les Cèdres",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "saint-aubin-sud-saint-aubin",
+     "nom": "Saint-Aubin Sud",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "centre-saint-aubin",
+     "nom": "Centre",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "saint-aubin-nord-saint-aubin",
+     "nom": "Saint-Aubin Nord",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "saint-aubin-gare-saint-aubin",
+     "nom": "Saint-Aubin Gare",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "champ-de-foire-saint-aubin",
+     "nom": "Champ de Foire",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "les-bruyeres-saint-aubin",
+     "nom": "Les Bruyères",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "la-fontaine-saint-aubin",
+     "nom": "La Fontaine",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "clinique-des-pins-saint-aubin",
+     "nom": "Clinique des Pins",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "la-croix-blanche-saint-aubin",
+     "nom": "La Croix Blanche",
+     "commune": "Saint-Aubin"
+    },
+    {
+     "id": "la-chapelle-les-ormes",
+     "nom": "La Chapelle",
+     "commune": "Les Ormes"
+    },
+    {
+     "id": "les-lilas-beaulieu",
+     "nom": "Les Lilas",
+     "commune": "Beaulieu"
+    },
+    {
+     "id": "les-ecoles-montclair",
+     "nom": "Les Écoles",
+     "commune": "Montclair"
+    },
+    {
+     "id": "le-viaduc-montclair",
+     "nom": "Le Viaduc",
+     "commune": "Montclair"
+    },
+    {
+     "id": "le-belvedere-montclair",
+     "nom": "Le Belvédère",
+     "commune": "Montclair"
+    },
+    {
+     "id": "piscine-montclair",
+     "nom": "Piscine",
+     "commune": "Montclair"
+    },
+    {
+     "id": "le-pre-vert-montclair",
+     "nom": "Le Pré Vert",
+     "commune": "Montclair"
+    },
+    {
+     "id": "la-poste-montclair",
+     "nom": "La Poste",
+     "commune": "Montclair"
+    },
+    {
+     "id": "zone-artisanale-montclair",
+     "nom": "Zone Artisanale",
+     "commune": "Montclair"
+    },
+    {
+     "id": "le-stade-montclair",
+     "nom": "Le Stade",
+     "commune": "Montclair"
+    },
+    {
+     "id": "rond-point-nord-montclair",
+     "nom": "Rond-Point Nord",
+     "commune": "Montclair"
+    },
+    {
+     "id": "la-cascade-villeneuve",
+     "nom": "La Cascade",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-genets-villeneuve",
+     "nom": "Les Genêts",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "hopital-villeneuve",
+     "nom": "Hôpital",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-peupliers-villeneuve",
+     "nom": "Les Peupliers",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-platanes-villeneuve",
+     "nom": "Les Platanes",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "le-chateau-d-eau-villeneuve",
+     "nom": "Le Château d'Eau",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-tilleuls-villeneuve",
+     "nom": "Les Tilleuls",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "le-grand-pre-villeneuve",
+     "nom": "Le Grand Pré",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "college-jean-rostand-villeneuve",
+     "nom": "Collège Jean Rostand",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "pont-du-moulin-villeneuve",
+     "nom": "Pont du Moulin",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "les-acacias-villeneuve",
+     "nom": "Les Acacias",
+     "commune": "Villeneuve"
+    },
+    {
+     "id": "lycee-victor-hugo-villeneuve",
+     "nom": "Lycée Victor Hugo",
+     "commune": "Villeneuve"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prochain bus</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <p class="surtitre">Bus · temps réel</p>
+  <h1>Prochain bus</h1>
+  <p class="commune">Choisis ta ligne, puis ton arrêt.</p>
+  <input class="recherche" id="recherche" type="search" placeholder="Numéro ou ville (ex. 12, centre…)" autocomplete="off">
+  <ul class="grille-lignes" id="lignes"></ul>
+  <p class="pied">Données : La Métropole Mobilité (open data). Le temps réel est indiqué quand il est disponible pour la ligne.</p>
+</main>
+<script>
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+let lignes = [];
+function afficher() {
+  const q = norm(document.getElementById("recherche").value.trim());
+  document.getElementById("lignes").innerHTML = lignes
+    .filter((l) => !q || norm(`${l.ligne} ${l.nom}`).includes(q))
+    .map((l) => `<li><a href="/l/${l.id}">
+      <span class="badge grand" style="background:${l.couleur};color:${l.texte}">${esc(l.ligne)}</span>
+      <span><span class="nom">${esc(l.nom)}</span>${l.tempsReel ? "" : `<br><span class="etat" style="color:var(--doux);font-size:.8rem">horaires théoriques uniquement</span>`}</span>
+      <span class="chevron">›</span></a></li>`).join("") || `<li class="carte vide">Aucune ligne trouvée.</li>`;
+}
+document.getElementById("recherche").addEventListener("input", afficher);
+fetch("/api/lignes").then((r) => r.json()).then((d) => { lignes = d; afficher(); });
+</script>
+</body>
+</html>

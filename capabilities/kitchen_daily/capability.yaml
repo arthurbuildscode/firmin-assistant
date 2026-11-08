@@ -1,0 +1,32 @@
+# Capacité Kitchen Daily (lot 2, migrée en capacité au lot 5a). Contrat : CONTRACT.md §9.
+# La bibliothèque et la CLI restent dans tools/kitchen_daily.py (`python -m tools.kitchen_daily login|statut|…`).
+nom: kitchen_daily
+titre: Kitchen Daily
+description: Plats cuisinés livrés le jeudi — livraisons, menu, sélection de la semaine, extras (desserts, entrées, jus) et semaines sautées, pilotés en langage naturel (enregistrés sur le site après validation).
+version: 1
+statut: actif
+origine: humain
+personnes: []
+# Pas de secret : la connexion au site est un état de session (data/.kd/state.json, créé par
+# `python -m tools.kitchen_daily login`), les identifiants ne sont jamais conservés.
+secrets: []
+crons:
+  - nom: rappel            # proposition du mercredi soir dans le groupe ; surcharge : config.yaml crons.rappel_kitchen_daily
+    quand: "Wed 18:00"
+# Outils menant à un effet sur le site : ils renvoient CONFIRMATION_REQUISE, l'action est exécutée après « Valider ».
+# - kitchen_daily_proposer → action `kitchen_daily_selection` (plats) ; exécutée sans bouton si la capacité est en
+#   `validation: automatique` (config.yaml) ;
+# - kitchen_daily_extras_definir → action du même nom (extras payants ou retraits ; un dessert offert seul est
+#   enregistré directement, sans frais) ;
+# - kitchen_daily_livraison_definir → action du même nom (sauter / réactiver une semaine).
+actions_avec_effet: [kitchen_daily_proposer, kitchen_daily_extras_definir, kitchen_daily_livraison_definir]
+# Actions toujours validées par bouton, même en validation automatique (kind de l'action = nom de l'outil).
+confirmation_toujours: [kitchen_daily_extras_definir, kitchen_daily_livraison_definir]
+# Seuils (skill ux-capacites §2, coeur.spontane) : le rappel du mercredi est notifié même si le brief du jour l'a
+# déjà été, car le choix des plats doit être fait avant la date limite du site.
+seuils:
+  - nom: date_limite
+    description: choix (ou vérification) des plats de la prochaine livraison à faire avant la date limite du site
+reseau: ["www.kitchen-daily.fr"]
+commandes_telegram: []
+parametres: []             # url et formule restent dans config.yaml → kitchen_daily (compatibilité lot 2)

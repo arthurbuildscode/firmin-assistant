@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ligne</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <a class="retour" href="/">‹ Toutes les lignes</a>
+  <div class="vers" style="margin:4px 0 2px"><span id="badge"></span><h1 id="nom" style="font-size:1.4rem;margin:0">Chargement…</h1></div>
+  <p class="commune" id="info"></p>
+
+  <p class="etiquette-carte" style="margin-left:4px">Dans quel sens ?</p>
+  <nav class="sens" id="sens"></nav>
+
+  <input class="recherche" id="recherche" type="search" placeholder="Rechercher un arrêt ou une ville" autocomplete="off">
+  <p class="etiquette-carte" style="margin-left:4px">Choisis ton arrêt</p>
+  <section class="carte" style="padding:8px 10px"><ul class="frise" id="arrets"></ul></section>
+
+  <p class="liens-bas"><a id="lien-qr" href="#">QR codes de cette ligne</a></p>
+</main>
+<script>
+const ligneId = location.pathname.split("/")[2];
+const $ = (s) => document.getElementById(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+let ligne, sensId = new URLSearchParams(location.search).get("sens");
+
+function afficher() {
+  const sens = ligne.sens.find((s) => s.id === sensId) || ligne.sens[0];
+  sensId = sens.id;
+  history.replaceState(null, "", `/l/${ligne.id}?sens=${sens.id}`);
+  $("sens").style.gridTemplateColumns = `repeat(${ligne.sens.length}, 1fr)`;
+  $("sens").innerHTML = ligne.sens.map((s) =>
+    `<a href="?sens=${s.id}" data-sens="${s.id}" class="${s.id === sens.id ? "actif" : ""}">${esc(s.libelle)}</a>`).join("");
+  const q = norm($("recherche").value.trim());
+  $("arrets").innerHTML = sens.arrets
+    .filter((a) => !q || norm(`${a.nom} ${a.commune}`).includes(q))
+    .map((a) => `<li><a href="/l/${ligne.id}/${sens.id}/${a.id}">
+      <span class="point"></span>
+      <span class="nom-arret">${esc(a.nom)}<span class="commune-arret">${esc(a.commune)}</span></span>
+      <span class="chevron">›</span></a></li>`).join("") || `<li class="vide">Aucun arrêt trouvé.</li>`;
+  $("lien-qr").href = `/qr?l=${ligne.id}&s=${sens.id}`;
+}
+
+$("sens").addEventListener("click", (e) => {
+  const a = e.target.closest("a[data-sens]");
+  if (!a) return;
+  e.preventDefault();
+  sensId = a.dataset.sens;
+  afficher();
+});
+$("recherche").addEventListener("input", afficher);
+
+fetch(`/api/ligne/${ligneId}`).then((r) => {
+  if (!r.ok) throw new Error("Ligne inconnue");
+  return r.json();
+}).then((d) => {
+  ligne = d;
+  document.title = `Ligne ${d.ligne} · Prochain bus`;
+  document.documentElement.style.setProperty("--couleur-ligne", d.couleur);
+  $("badge").innerHTML = `<span class="badge grand" style="background:${d.couleur};color:${d.texte}">${esc(d.ligne)}</span>`;
+  $("nom").textContent = d.nom;
+  $("info").textContent = d.tempsReel ? "Temps réel disponible" : "Horaires théoriques uniquement";
+  afficher();
+}).catch((e) => { $("nom").textContent = e.message; });
+</script>
+</body>
+</html>

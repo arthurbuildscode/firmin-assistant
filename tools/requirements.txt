@@ -1,0 +1,28 @@
+# Outils MCP Firmin Assistant (Python 3.12)
+# Lot 7 : transport Streamable HTTP (mode sans état, réponses JSON) du serveur d'outils persistant ; testé avec 1.30 et 2.3
+mcp>=1.10
+uvicorn>=0.30
+icalendar>=6.0
+recurring-ical-events>=3.0
+pyyaml>=6.0
+python-dateutil>=2.9
+
+# Kitchen Daily (lot 2) : pilotage du site avec Chromium headless, parsing HTML
+playwright>=1.47
+beautifulsoup4>=4.12
+
+# Coffre à secrets (lot 5b) : AES-256-GCM de data/coffre.json
+cryptography>=42
+
+# Optionnel : écriture Google Calendar (agenda_ajouter avec confirmation)
+# google-api-python-client>=2.100
+# google-auth-oauthlib>=1.2
+
+# Lot 7a : édition de data/config.yaml par l'administration en conservant les commentaires (repli PyYAML sinon)
+ruamel.yaml>=0.18
+
+# Atelier (lot 7b) : contrôle des capacités fabriquées par l'assistant (ruff check avant installation)
+ruff>=0.6
+
+# Capacité courses & promos : texte des tickets de caisse reçus en PDF (facultatif, message clair s'il manque)
+pypdf>=4.0

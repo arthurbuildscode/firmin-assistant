@@ -1,0 +1,11 @@
+[Unit]
+Description=Firmin Assistant - timer test de restauration (le 3 de chaque mois)
+
+[Timer]
+# Après la sauvegarde de 03:30, avant le redémarrage automatique de 04:40 : on évite la nuit, 05:10.
+OnCalendar=*-*-03 05:10:00
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Firmin Assistant - relance du service Cartreize quand sa grille GTFS change
+
+[Path]
+# Réécrit en dernier par la source Cartreize (cron rafraichir_grilles), après le remplacement de la grille.
+PathChanged=/srv/home-os/data/capacites/transports/cartreize/gtfs/.maj
+Unit=homeos-transports-cartreize-recharger.service
+
+[Install]
+WantedBy=paths.target

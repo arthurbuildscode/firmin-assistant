@@ -1,0 +1,49 @@
+# Capacité « transports » (remplace « bus », lot 5c) : bus, car, métro, tram, train, avion.
+# Chaque réseau est un fournisseur (fournisseurs/<nom>/ : fournisseur.yaml + source.py) ; voir docs/transports.md.
+nom: transports
+titre: Transports
+description: Prochains départs et retards en temps réel sur les trajets habituels (bus, car, métro, tram, train), état d'un train ou d'un vol, réseaux ajoutés à la demande.
+version: 2
+statut: actif
+origine: humain
+remplace: [bus]          # reprend l'activation, les réglages et les trajets de l'ancienne capacité bus
+personnes: []            # tout le foyer ; les trajets de chacun sont dans data/capacites/transports/trajets.yaml
+secrets: []              # sources standard ouvertes et sans clé (docs/transports.md)
+crons:
+  - nom: rafraichir_grilles
+    quand: "04:00"             # grilles théoriques des réseaux utilisés (chaque source décide : Cartreize hebdo, SNCF quotidien)
+  - nom: alertes_retard
+    quand: "06:00..21:00/10"   # retard ≥ seuil ou suppression sur un trajet habituel qui part dans l'heure
+  - nom: veille_reservations
+    quand: "06:00..22:00/15"   # trains et vols lus dans l'agenda : rappel la veille, alerte le jour même
+# Seuils (skill ux-capacites §2, coeur.spontane) : seules raisons de parler hors du brief.
+seuils:
+  - nom: retard
+    description: retard d'au moins seuil_alerte_min (5 min ou plus) ou suppression sur un trajet habituel qui part dans l'heure
+  - nom: reservation
+    description: train réservé (agenda) supprimé ou en retard d'au moins le seuil, la veille ou le jour même
+actions_avec_effet: [transports_reseau_ajouter]
+confirmation_toujours: [transports_reseau_ajouter]   # ajouter un réseau = approuver de nouveaux sites
+# Hôtes des fournisseurs standard (liste blanche du proxy sortant). Ceux d'un réseau ajouté par le foyer ou fabriqué
+# par l'atelier sont approuvés à la demande (etat.json, transports.reseau_approuve).
+reseau: ["siri.lametropolemobilite.fr", "app.mecatran.com", "eu.ftp.opendatasoft.com", "proxy.transport.data.gouv.fr"]
+commandes_telegram:
+  - nom: transports
+    aide: Prochains départs sur tes trajets habituels
+  - nom: bus
+    aide: Prochain bus ou car sur ton trajet habituel
+parametres:
+  - cle: fournisseurs
+    type: texte
+    question: Quels réseaux de transport utilisez-vous près de chez vous (par exemple les cars Cartreize) ? Le train SNCF est toujours disponible.
+    obligatoire: false
+  - cle: seuil_retard_min
+    type: nombre
+    question: À partir de combien de minutes de retard je préviens (5 minimum) ?
+    obligatoire: false
+    defaut: 5
+  - cle: heure_veille
+    type: nombre
+    question: À quelle heure je rappelle un train ou un vol du lendemain (18 h par défaut) ?
+    obligatoire: false
+    defaut: 18

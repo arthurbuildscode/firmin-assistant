@@ -1,0 +1,14 @@
+{
+  "name": "firmin-transports-cartreize",
+  "version": "1.0.0",
+  "description": "Prochains passages en temps réel des bus du réseau configuré, une page par arrêt (pour QR codes)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.mjs",
+    "donnees": "python prepare.py"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

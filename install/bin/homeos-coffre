@@ -1,0 +1,21 @@
+#!/bin/bash
+# homeos-coffre — CLI du coffre à secrets (tools/coffre.py) pour l'administrateur du serveur (lot 5c).
+#
+#   sudo -u homeos homeos-coffre set <cle>      # saisie masquée, jamais de valeur en argument
+#   sudo -u homeos homeos-coffre ls             # métadonnées, jamais les valeurs
+#
+# Copié par install.sh dans /usr/local/bin (root 755). Doit tourner sous homeos : seul homeos lit le coffre
+# (/var/lib/homeos/coffre.json) et sa clé (/etc/homeos/coffre.env).
+set -euo pipefail
+RACINE="${HOMEOS_ROOT:-/srv/home-os}"
+if [[ "$(id -un)" != "homeos" ]]; then
+  echo "homeos-coffre se lance sous homeos : sudo -u homeos homeos-coffre $*" | sed 's/ set .*/ set …/' >&2
+  exit 2
+fi
+cd "$RACINE"
+export HOMEOS_ROOT="$RACINE"
+export HOMEOS_DATA="${HOMEOS_DATA:-$RACINE/data}"
+export HOMEOS_ETAT="${HOMEOS_ETAT:-/var/lib/homeos}"
+export HOMEOS_SECRETS="${HOMEOS_SECRETS:-/etc/homeos}"
+export PYTHONPATH="$RACINE"
+exec "$RACINE/.venv/bin/python" -m tools.coffre "$@"

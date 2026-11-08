@@ -1,0 +1,345 @@
+#!/usr/bin/env bash
+# /usr/local/sbin/homeos-claude — garde-fou root entre le bot (homeos) et `claude` sous une personne.
+#
+# Installé par install.sh (root:root 755). Le sudoers n'autorise homeos qu'à lancer CE script sous les
+# utilisateurs des personnes (et `claude auth status`) :
+#     sudo -n -H -u <personne> /usr/local/sbin/homeos-claude -p "<message>" [options autorisées]
+#
+# Le script impose : -p, --output-format stream-json (ou json), --allowedTools "mcp__homeos__*,Read",
+# --permission-mode dontAsk, des réglages --settings qui ne peuvent que restreindre (lecture bloquée hors des
+# dossiers de travail, refus explicites), des --add-dir limités aux dossiers non sensibles, la config MCP et
+# le prompt système du dépôt. Toute autre option est refusée (Bash, bypassPermissions, --dangerously-*,
+# outils supplémentaires, autre config MCP…). Environnement reconstruit : auto-update coupé, proxy filtrant
+# si activé (/etc/default/homeos-proxy), aucune clé API. cwd : /var/lib/homeos-cwd/<personne> (vide).
+#
+# Outils MCP (lot 7) : /etc/default/homeos-outils dit le mode. En « http », le serveur d'outils persistant
+# (homeos-outils.service, sous homeos) est joint en HTTP local avec le jeton de la personne : le wrapper lit
+# ~/.config/homeos/jeton (600, propriété de la personne), écrit ~/.config/homeos/mcp.json (600) avec l'URL et
+# l'en-tête Authorization, et le passe à claude à la place de tools/mcp.json, avec --strict-mcp-config. Le jeton
+# n'apparaît jamais dans les arguments (visibles dans ps). En « stdio » (défaut, retour arrière), tools/mcp.json
+# lance le serveur sous la personne, comme au lot 5d.
+#
+# Canal (lot 4a) : --homeos-canal web (appli web) est consommé par le wrapper, jamais transmis à claude : en http,
+# configuration ~/.config/homeos/mcp-web.json avec l'en-tête X-Homeos-Canal: web (cartes génératives) ; en stdio,
+# HOMEOS_CANAL=web dans l'environnement. Sans l'option (Telegram, crons) : comportement inchangé.
+# Modèle (lot 4a, routeur) : --model haiku|sonnet|opus|claude-<identifiant> (liste blanche), une seule fois.
+#
+# Mode test (tests/wrapper/test_homeos_claude.sh) : HOMEOS_WRAPPER_TEST=1 et des chemins HOMEOS_RACINE,
+# HOMEOS_DONNEES, HOMEOS_ETAT, HOMEOS_SECRETS, HOMEOS_FICHIER_PROXY, HOMEOS_FICHIER_OUTILS, HOMEOS_MAISON,
+# HOMEOS_CLAUDE_BIN — lus UNIQUEMENT hors
+# sudo (SUDO_USER vide). Sous sudo, l'environnement de l'appelant est de toute façon remis à zéro (env_reset).
+set -euo pipefail
+
+RACINE=/srv/home-os
+DONNEES="$RACINE/data"
+ETAT=/var/lib/homeos
+SECRETS=/etc/homeos
+FICHIER_PROXY=/etc/default/homeos-proxy
+FICHIER_OUTILS=/etc/default/homeos-outils
+CLAUDE_BIN=""
+PYTHON=/usr/bin/python3
+OUTILS="mcp__homeos__*,Read"
+
+if [[ -z "${SUDO_USER:-}" && "${HOMEOS_WRAPPER_TEST:-}" == "1" ]]; then
+  RACINE="${HOMEOS_RACINE:-$RACINE}"
+  DONNEES="${HOMEOS_DONNEES:-$RACINE/data}"
+  ETAT="${HOMEOS_ETAT:-$ETAT}"
+  SECRETS="${HOMEOS_SECRETS:-$SECRETS}"
+  FICHIER_PROXY="${HOMEOS_FICHIER_PROXY:-$FICHIER_PROXY}"
+  FICHIER_OUTILS="${HOMEOS_FICHIER_OUTILS:-$FICHIER_OUTILS}"
+  MAISON_TEST="${HOMEOS_MAISON:-}"
+  CLAUDE_BIN="${HOMEOS_CLAUDE_BIN:-}"
+  [[ -x "$PYTHON" ]] || PYTHON="$(command -v python3)"
+fi
+
+refus() {
+  printf 'homeos-claude: refus : %s\n' "$*" >&2
+  command -v logger >/dev/null 2>&1 && logger -t homeos-claude -p auth.warning "refus ($(id -un)) : $*" 2>/dev/null || true
+  exit 64
+}
+
+if [[ -z "$CLAUDE_BIN" ]]; then
+  for c in /usr/bin/claude /usr/local/bin/claude; do
+    if [[ -x "$c" ]]; then CLAUDE_BIN="$c"; break; fi
+  done
+fi
+[[ -n "$CLAUDE_BIN" && -x "$CLAUDE_BIN" ]] || { echo "homeos-claude: claude introuvable" >&2; exit 127; }
+
+personne="$(id -un)"
+maison="$(getent passwd "$personne" | cut -d: -f6)"
+maison="${maison:-${HOME:-/nonexistent}}"
+[[ -n "${MAISON_TEST:-}" ]] && maison="$MAISON_TEST"
+
+# --- environnement reconstruit (rien n'est hérité de l'appelant) -------------------------------------------
+env_final=(
+  "HOME=$maison" "USER=$personne" "LOGNAME=$personne" "PATH=/usr/local/bin:/usr/bin:/bin"
+  "LANG=${LANG:-C.UTF-8}" "TERM=dumb" "DISABLE_AUTOUPDATER=1"
+  # Ni télémétrie optionnelle ni connecteurs claude.ai (Gmail, Drive… du compte de la personne) dans le bot.
+  "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1" "ENABLE_CLAUDEAI_MCP_SERVERS=false"
+)
+if [[ -r "$FICHIER_PROXY" ]]; then
+  while IFS= read -r ligne || [[ -n "$ligne" ]]; do
+    if [[ "$ligne" =~ ^(HTTPS_PROXY|HTTP_PROXY|NO_PROXY|https_proxy|http_proxy|no_proxy)=([A-Za-z0-9:/._,*-]+)$ ]]; then
+      env_final+=("${BASH_REMATCH[1]}=${BASH_REMATCH[2]}")
+    fi
+  done <"$FICHIER_PROXY"
+fi
+
+# --- mode des outils MCP (lot 7) : stdio (défaut) ou http ----------------------------------------------------
+MODE_OUTILS=stdio
+URL_OUTILS=http://127.0.0.1:8090/mcp
+if [[ -r "$FICHIER_OUTILS" ]]; then
+  while IFS= read -r ligne || [[ -n "$ligne" ]]; do
+    if [[ "$ligne" =~ ^HOMEOS_OUTILS=(stdio|http)$ ]]; then MODE_OUTILS="${BASH_REMATCH[1]}"; fi
+    if [[ "$ligne" =~ ^HOMEOS_OUTILS_URL=(http://127\.0\.0\.1:[0-9]{1,5}/[A-Za-z0-9/_-]*)$ ]]; then URL_OUTILS="${BASH_REMATCH[1]}"; fi
+  done <"$FICHIER_OUTILS"
+fi
+
+# --- atelier (lot 7b) : sous-agent qui fabrique (generer) ou relit (relire) une capacité ----------------------
+# Lancé par tools.atelier sous homeos (services homeos-atelier / homeos-atelier-installer, sans sudo) :
+#     homeos-claude --homeos-atelier <nom> --homeos-atelier-mode generer|relire -p "<consigne>" [--output-format json]
+# Le wrapper impose : utilisateur homeos, cwd $ETAT/atelier/<nom> (generer) ou $ETAT/atelier-relecture/<nom>
+# (relire), possédé par homeos ; outils restreints (lecture/écriture dans le dossier, Bash limité à pytest et à
+# l'explorateur du dépôt ; relecture en lecture seule) ; prompt système content/atelier/SYSTEM.md ou RELECTURE.md ;
+# --bare (ni CLAUDE.md, ni hooks, ni MCP) ; lecture bloquée hors du dossier ; budget et tours plafonnés ; clé API
+# lue dans $SECRETS/anthropic.env et passée à claude seulement. Toute autre option est refusée.
+# Ces chaînes sont aussi dans tools/atelier.py (OUTILS_GENERER, OUTILS_RELIRE) : un test vérifie qu'elles concordent.
+OUTILS_ATELIER_GENERER="Read,Glob,Grep,Edit(./**),Write(./**),Bash(python -m pytest:*),Bash(ruff check:*),Bash(python -m tools.navigation explorer:*)"
+OUTILS_ATELIER_RELIRE="Read,Glob,Grep"
+
+mode_atelier() {
+  local nom="" mode="" message="" format=json vu_p=0 utilisateur attendu=homeos travail systeme outils tours budget
+  while [[ $# -gt 0 ]]; do
+    local opt="$1"; shift
+    case "$opt" in
+      --homeos-atelier)
+        [[ "${1:-}" =~ ^[a-z][a-z0-9_]{0,39}$ ]] || refus "--homeos-atelier : nom de capacité invalide"
+        nom="$1"; shift ;;
+      --homeos-atelier-mode)
+        [[ "${1:-}" == generer || "${1:-}" == relire ]] || refus "--homeos-atelier-mode ${1:-?} (generer ou relire)"
+        mode="$1"; shift ;;
+      -p|--print)
+        [[ $# -ge 1 && "$1" != -* ]] || refus "-p : consigne manquante ou commençant par un tiret"
+        (( vu_p == 0 )) || refus "-p répété"
+        vu_p=1; message="$1"; shift ;;
+      --output-format)
+        [[ "${1:-}" == json || "${1:-}" == stream-json ]] || refus "--output-format ${1:-?}"
+        format="$1"; shift ;;
+      *) refus "atelier : option non autorisée : $opt" ;;
+    esac
+  done
+  [[ -n "$nom" && -n "$mode" && $vu_p -eq 1 ]] || refus "atelier : --homeos-atelier, --homeos-atelier-mode et -p obligatoires"
+  utilisateur="$(id -un)"
+  [[ -n "${MAISON_TEST:-}" ]] && attendu="$utilisateur"   # mode test : l'utilisateur courant tient lieu de homeos
+  [[ "$utilisateur" == "$attendu" ]] || refus "atelier : réservé à l'utilisateur homeos"
+  if [[ "$mode" == generer ]]; then
+    travail="$ETAT/atelier/$nom"; systeme="$RACINE/content/atelier/SYSTEM.md"; outils="$OUTILS_ATELIER_GENERER"
+    tours=60; budget=3.00
+  else
+    travail="$ETAT/atelier-relecture/$nom"; systeme="$RACINE/content/atelier/RELECTURE.md"; outils="$OUTILS_ATELIER_RELIRE"
+    tours=25; budget=0.50
+  fi
+  [[ -d "$travail" && ! -L "$travail" && -O "$travail" ]] || refus "atelier : dossier de travail $travail absent ou invalide"
+  [[ -f "$systeme" ]] || refus "atelier : prompt système absent ($systeme)"
+  local cle="" ligne
+  if [[ -r "$SECRETS/anthropic.env" ]]; then
+    while IFS= read -r ligne || [[ -n "$ligne" ]]; do
+      if [[ "$ligne" =~ ^ANTHROPIC_API_KEY=[\"\']?([A-Za-z0-9_-]{20,300})[\"\']?$ ]]; then cle="${BASH_REMATCH[1]}"; fi
+    done <"$SECRETS/anthropic.env"
+  fi
+  [[ -n "$cle" ]] || refus "atelier : clé API absente ($SECRETS/anthropic.env)"
+  local ws=""
+  if [[ -r "$SECRETS/navigateur.env" ]]; then
+    while IFS= read -r ligne || [[ -n "$ligne" ]]; do
+      if [[ "$ligne" =~ ^HOMEOS_NAVIGATEUR_WS=(wss?://(127\.0\.0\.1|localhost):[0-9]{1,5}/[A-Za-z0-9]{1,128})$ ]]; then ws="${BASH_REMATCH[1]}"; fi
+    done <"$SECRETS/navigateur.env"
+  fi
+  local maison_atelier="$ETAT/atelier/.maison"
+  [[ -d "$maison_atelier" ]] || (umask 077 && mkdir -p "$maison_atelier") || refus "atelier : $maison_atelier impossible à créer"
+  local reglages
+  reglages="$(printf '{"permissions":{"blockReadsOutsideWorkingDirectories":true,"deny":["Read(/%s/**)","Read(/%s/**)","Read(/%s/coffre*)","Read(/%s/kd/**)","Read(//home/**)","Read(//root/**)","Edit(//etc/**)","Edit(/%s/**)"]},"cleanupPeriodDays":7,"disableClaudeAiConnectors":true}' \
+    "$SECRETS" "$DONNEES" "$ETAT" "$ETAT" "$RACINE")"
+  env_final=("${env_final[@]/#HOME=*/HOME=$maison_atelier}")
+  env_final+=("ANTHROPIC_API_KEY=$cle" "PATH=$RACINE/.venv/bin:/usr/local/bin:/usr/bin:/bin" "PYTHONPATH=$RACINE"
+              "PYTHONSAFEPATH=1" "PYTHONDONTWRITEBYTECODE=1" "HOMEOS_DATA=$travail/.donnees-test"
+              "HOMEOS_SECRETS=/nonexistent" "HOMEOS_CAPABILITIES=/nonexistent" "HOMEOS_ATELIER_MODE=$mode"
+              "PLAYWRIGHT_BROWSERS_PATH=/opt/playwright")
+  [[ -n "$ws" ]] && env_final+=("HOMEOS_NAVIGATEUR_WS=$ws")
+  cd "$travail"
+  exec env -i "${env_final[@]}" "$CLAUDE_BIN" --bare -p "$message" --output-format "$format" \
+    --allowedTools "$outils" --permission-mode dontAsk --append-system-prompt-file "$systeme" \
+    --settings "$reglages" --strict-mcp-config --max-turns "$tours" --max-budget-usd "$budget"
+}
+
+# Toujours en première position (jamais détecté dans un message : -p "--homeos-atelier" reste un message).
+[[ "${1:-}" == --homeos-atelier ]] && mode_atelier "$@"
+
+# --- auth status : seule sous-commande admise ----------------------------------------------------------------
+if [[ "${1:-}" == "auth" ]]; then
+  [[ $# -eq 2 && "${2:-}" == "status" ]] || refus "seul « auth status » est permis"
+  exec env -i "${env_final[@]}" "$CLAUDE_BIN" auth status
+fi
+
+reel() { realpath -e -- "$1" 2>/dev/null || true; }
+
+dossiers_permis=()
+for d in foyer personnes alimentation fichiers photos voitures animaux; do
+  dossiers_permis+=("$(reel "$DONNEES/$d")")
+done
+dossiers_permis+=("$(reel "$RACINE/content")" "$(reel "$RACINE/capabilities")")
+
+add_dir_permis() {
+  local cible p
+  cible="$(reel "$1")"
+  [[ -n "$cible" ]] || return 1
+  for p in "${dossiers_permis[@]}"; do
+    [[ -n "$p" && "$cible" == "$p" ]] && return 0
+  done
+  return 1
+}
+
+# Réglages : objet JSON qui ne peut que restreindre (deny, lecture bloquée hors des dossiers de travail).
+reglages_valides() {
+  "$PYTHON" -I -c '
+import json, sys
+try:
+    r = json.loads(sys.argv[1])
+except ValueError:
+    sys.exit(1)
+if not isinstance(r, dict) or set(r) - {"permissions", "cleanupPeriodDays", "disableClaudeAiConnectors"}:
+    sys.exit(1)
+if "disableClaudeAiConnectors" in r and r["disableClaudeAiConnectors"] is not True:
+    sys.exit(1)
+p = r.get("permissions")
+if not isinstance(p, dict) or set(p) - {"deny", "blockReadsOutsideWorkingDirectories"}:
+    sys.exit(1)
+if p.get("blockReadsOutsideWorkingDirectories") is not True:
+    sys.exit(1)
+deny = p.get("deny", [])
+if not isinstance(deny, list) or not all(isinstance(x, str) for x in deny):
+    sys.exit(1)
+if "cleanupPeriodDays" in r and not (isinstance(r["cleanupPeriodDays"], int) and 1 <= r["cleanupPeriodDays"] <= 30):
+    sys.exit(1)
+' "$1"
+}
+
+reglages_defaut() {
+  printf '{"permissions":{"blockReadsOutsideWorkingDirectories":true,"deny":["Read(/%s/**)","Read(/%s/**)","Read(/%s/**/secrets*)","Read(/%s/*.sqlite*)","Read(/%s/sessions.json)","Read(/%s/.kd/**)","Read(/%s/.git/**)","Read(/%s/fichiers/sensibles/**)","Read(//home/**/.claude/**)","Read(//home/*/.claude.json)","Read(//home/*/.config/homeos/**)","Read(//root/**)"]},"cleanupPeriodDays":30,"disableClaudeAiConnectors":true}' \
+    "$SECRETS" "$ETAT" "$DONNEES" "$DONNEES" "$DONNEES" "$DONNEES" "$DONNEES" "$DONNEES"
+}
+
+# --- analyse des options ------------------------------------------------------------------------------------
+final=()
+vu_p=0; vu_format=0; vu_outils=0; vu_mode=0; vu_reglages=0; vu_mcp=0; vu_modele=0
+CANAL=telegram
+while [[ $# -gt 0 ]]; do
+  opt="$1"; shift
+  case "$opt" in
+    --homeos-canal)
+      # Lot 4a : option du wrapper (jamais transmise à claude) — canal de la conversation, annoncé au serveur
+      # d'outils (en-tête X-Homeos-Canal) pour qu'il ajoute les cartes génératives de l'appli web.
+      [[ "${1:-}" == "telegram" || "${1:-}" == "web" ]] || refus "--homeos-canal ${1:-?} (telegram ou web)"
+      CANAL="$1"; shift ;;
+    -p|--print)
+      [[ $# -ge 1 ]] || refus "-p sans message"
+      (( vu_p == 0 )) || refus "-p répété"
+      # Un message qui commence par un tiret serait lu par claude comme une option (le cœur préfixe toujours
+      # une ligne de contexte ; on refuse plutôt que de laisser passer).
+      [[ "$1" != -* ]] || refus "-p : le message ne peut pas commencer par un tiret"
+      vu_p=1; final+=(-p "$1"); shift ;;
+    --output-format)
+      [[ "${1:-}" == "stream-json" || "${1:-}" == "json" ]] || refus "--output-format ${1:-?} (stream-json ou json seulement)"
+      vu_format=1; final+=(--output-format "$1"); shift ;;
+    --verbose|--include-partial-messages)
+      final+=("$opt") ;;
+    --resume)
+      [[ "${1:-}" =~ ^[A-Za-z0-9-]{1,100}$ ]] || refus "--resume : identifiant de session invalide"
+      final+=(--resume "$1"); shift ;;
+    --append-system-prompt-file)
+      # Le prompt du foyer, ou sa variante personnalisée pour l'utilisateur courant (mémoire injectée).
+      [[ "${1:-}" == "$DONNEES/.claude-system-prompt.md" || "${1:-}" == "$DONNEES/.claude-system-prompt-$(id -un).md" ]] \
+        || refus "--append-system-prompt-file : seul le prompt du foyer (ou sa variante pour $(id -un)) est permis"
+      final+=("$opt" "$1"); shift ;;
+    --mcp-config)
+      [[ "${1:-}" == "$RACINE/tools/mcp.json" ]] || refus "--mcp-config : seule la configuration du dépôt est permise"
+      (( vu_mcp == 0 )) || refus "--mcp-config répété"
+      vu_mcp=1; shift ;;   # ajoutée plus bas selon le mode des outils
+    --allowedTools|--allowed-tools)
+      [[ "${1:-}" == "$OUTILS" ]] || refus "--allowedTools ${1:-?} (seul « $OUTILS » est permis)"
+      vu_outils=1; final+=(--allowedTools "$1"); shift ;;
+    --permission-mode)
+      [[ "${1:-}" == "dontAsk" ]] || refus "--permission-mode ${1:-?} (seul dontAsk est permis)"
+      vu_mode=1; final+=(--permission-mode dontAsk); shift ;;
+    --permission-prompts)
+      [[ "${1:-}" == "none" ]] || refus "--permission-prompts ${1:-?} (seul none est permis)"
+      final+=("$opt" none); shift ;;
+    --max-turns)
+      [[ "${1:-}" =~ ^[0-9]{1,3}$ ]] || refus "--max-turns invalide"
+      final+=("$opt" "$1"); shift ;;
+    --model)
+      # Lot 4a (routeur de modèle) : alias ou identifiant Claude seulement (liste blanche de tools/modeles.py).
+      [[ "${1:-}" =~ ^(haiku|sonnet|opus|claude-[a-z0-9.-]+)$ ]] || refus "--model ${1:-?} (haiku, sonnet, opus ou claude-…)"
+      (( vu_modele == 0 )) || refus "--model répété"
+      vu_modele=1; final+=(--model "$1"); shift ;;
+    --settings)
+      [[ $# -ge 1 ]] || refus "--settings sans valeur"
+      (( vu_reglages == 0 )) || refus "--settings répété"
+      reglages_valides "$1" || refus "--settings : seuls des réglages qui restreignent sont permis"
+      vu_reglages=1; final+=(--settings "$1"); shift ;;
+    --add-dir)
+      [[ $# -ge 1 ]] || refus "--add-dir sans dossier"
+      add_dir_permis "$1" || refus "--add-dir $1 (dossier non autorisé)"
+      final+=(--add-dir "$(reel "$1")"); shift ;;
+    --dangerously-*|--allow-dangerously-*)
+      refus "$opt (option dangereuse)" ;;
+    *)
+      case "$opt" in
+        *bypassPermissions*|*Bash*) refus "$opt (option dangereuse)" ;;
+      esac
+      refus "option non autorisée : $opt" ;;
+  esac
+done
+
+(( vu_p == 1 )) || refus "-p obligatoire (mode non interactif uniquement)"
+(( vu_format == 1 )) || final+=(--output-format stream-json)
+(( vu_outils == 1 )) || final+=(--allowedTools "$OUTILS")
+(( vu_mode == 1 )) || final+=(--permission-mode dontAsk)
+(( vu_reglages == 1 )) || final+=(--settings "$(reglages_defaut)")
+
+# Configuration MCP : en http, générée pour la personne avec son jeton ; en stdio, celle du dépôt (si demandée).
+if [[ "$MODE_OUTILS" == http ]]; then
+  conf_dir="$maison/.config/homeos"
+  jeton_f="$conf_dir/jeton"
+  [[ -f "$jeton_f" && ! -L "$jeton_f" && -O "$jeton_f" ]] \
+    || refus "jeton du serveur d'outils absent ($jeton_f) : relancer install.sh (scripts/jetons-outils.sh)"
+  [[ "$(stat -c %a "$jeton_f")" == 600 ]] || refus "$jeton_f doit être en 600 (relancer install.sh)"
+  jeton="$(head -c 512 "$jeton_f" | tr -d '[:space:]')"
+  [[ "$jeton" =~ ^[A-Za-z0-9_-]{32,256}$ ]] || refus "jeton du serveur d'outils invalide ($jeton_f)"
+  [[ -d "$conf_dir" && ! -L "$conf_dir" && -O "$conf_dir" ]] || refus "$conf_dir invalide"
+  # Un fichier par canal : une conversation web et une conversation Telegram simultanées ne se gênent pas.
+  if [[ "$CANAL" == web ]]; then
+    conf_mcp="$conf_dir/mcp-web.json"; entete_canal=',"X-Homeos-Canal":"web"'
+  else
+    conf_mcp="$conf_dir/mcp.json"; entete_canal=""
+  fi
+  tmp_mcp="$(umask 077 && mktemp "$conf_dir/.mcp.XXXXXX")" || refus "écriture impossible dans $conf_dir"
+  printf '{"mcpServers":{"homeos":{"type":"http","url":"%s","headers":{"Authorization":"Bearer %s"%s}}}}\n' \
+    "$URL_OUTILS" "$jeton" "$entete_canal" >"$tmp_mcp"
+  chmod 600 "$tmp_mcp"
+  mv -f "$tmp_mcp" "$conf_mcp"
+  unset jeton
+  final+=(--mcp-config "$conf_mcp" --strict-mcp-config)
+elif (( vu_mcp == 1 )); then
+  final+=(--mcp-config "$RACINE/tools/mcp.json" --strict-mcp-config)
+fi
+
+# Canal web en stdio (repli) : le serveur d'outils lancé par claude hérite de la variable.
+[[ "$CANAL" == web ]] && env_final+=("HOMEOS_CANAL=web")
+
+# Dossier de travail vide de la personne (créé par install.sh, hors de /var/lib/homeos depuis le lot 7) : il compte
+# comme dossier de travail, il ne doit donc jamais être remplacé par / ou un dossier de données.
+TRAVAIL="${ETAT%/}-cwd/$personne"
+[[ -d "$TRAVAIL" ]] || refus "dossier de travail $TRAVAIL absent (relancer install.sh)"
+cd "$TRAVAIL"
+
+exec env -i "${env_final[@]}" "$CLAUDE_BIN" "${final[@]}"

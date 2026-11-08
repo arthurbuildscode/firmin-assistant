@@ -1,0 +1,20 @@
+{
+  "_commentaire": "Variante de développement : remplacer ${HOMEOS_ROOT} par le chemin du dépôt (sed). Claude Code ignore la clé cwd des configs MCP : le package est trouvé via PYTHONPATH. PLAYWRIGHT_BROWSERS_PATH : dossier des navigateurs Playwright (/opt/playwright sur le VPS ; adapter en dev, ex. ~/.cache/ms-playwright). Proxy sortant : HTTPS_PROXY n'est pas fixé ici ; tools.server le lit dans /etc/default/homeos-proxy s'il existe (install.sh --filtrer-sortant). HOMEOS_ETAT/HOMEOS_SECRETS absents en dev : état dans data/, secrets dans data/secrets.env.",
+  "mcpServers": {
+    "homeos": {
+      "command": "${HOMEOS_ROOT}/.venv/bin/python",
+      "args": [
+        "-m",
+        "tools.server"
+      ],
+      "env": {
+        "HOMEOS_ROOT": "${HOMEOS_ROOT}",
+        "HOMEOS_DATA": "${HOMEOS_ROOT}/data",
+        "PYTHONPATH": "${HOMEOS_ROOT}",
+        "HOMEOS_LOG": "DEBUG",
+        "PLAYWRIGHT_BROWSERS_PATH": "/opt/playwright",
+        "DISABLE_AUTOUPDATER": "1"
+      }
+    }
+  }
+}

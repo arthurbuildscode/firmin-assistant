@@ -1,0 +1,20 @@
+# Données runtime (sauvegardées par restic, jamais commitées ici)
+data/
+secrets.env
+*.sqlite
+*.sqlite-journal
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Divers
+*.log
+.DS_Store
+.venv-tools/
+
+# Archives produit (scripts/empaqueter.sh)
+dist/

@@ -1,0 +1,13 @@
+# Fournisseur standard « manuel » : aucune source ouverte, gratuite et fiable ne donne le retard ou la porte d'un vol
+# (étude du 8 nov. 2026 dans docs/transports.md : OpenSky ne filtre pas par numéro de vol et ne donne ni retard ni
+# porte ; ses historiques de vols demandent un compte et ne couvrent que la veille ; les API de vols sont payantes
+# ou à clé commerciale). Les vols lus dans l'agenda servent au rappel de la veille ; l'état se vérifie chez la compagnie.
+nom: vols
+titre: Vols (sans suivi en temps réel)
+description: Rappel des vols notés dans l'agenda ; le retard et la porte se vérifient sur le site de la compagnie.
+modes: [avion]
+source: manuel
+portee: nationale
+zone: Monde
+origine: humain
+reseau: []

@@ -1,0 +1,21 @@
+[Unit]
+Description=Firmin Assistant - applique config.yaml et l'état des capacités aux timers systemd
+# Copie root du script (install.sh) : le dépôt, modifiable par le groupe foyer, n'est jamais exécuté en root ;
+# le script fait tourner Python sous homeos et revalide ses sorties avant d'écrire une unité.
+ConditionPathExists=/usr/local/sbin/homeos-appliquer-config
+
+[Service]
+Type=oneshot
+# Regroupe les écritures rapprochées (config.yaml puis etat.json, sauvegardes, journal).
+ExecStartPre=/bin/sleep 3
+ExecStart=/usr/local/sbin/homeos-appliquer-config /srv/home-os
+# Root (écrit dans /etc/systemd/system et appelle systemctl) : durcissement limité à ce qui ne gêne ni sudo
+# (python sous homeos) ni systemctl.
+PrivateTmp=yes
+ProtectHome=read-only
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+MemoryMax=500M
+TasksMax=64

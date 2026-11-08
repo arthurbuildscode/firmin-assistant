@@ -1,0 +1,14 @@
+HYPER FICTIF - ZONE DES ACACIAS
+Ticket n° 004512   Caisse 12
+Date : 06.11.26  18:05
+Client : Mme Exemple
+Désignation                      Qté   P.U.    Montant
+CAFE MOULU ARABICA 250G     2 x 3,15 €     6,30 €
+BON DE REDUCTION CAFE                     -1,00 €
+LESSIVE LIQUIDE 2L                        8,90 €
+POMMES GALA VRAC   0,850 kg x 2,49 €     2,12 €
+YAOURT NATURE X8                          1,85 €
+TOTAL TTC                                18,17 €
+Payé par carte bancaire                  18,17 €
+VISA ************4242
+Courriel du ticket : client@exemple.fr

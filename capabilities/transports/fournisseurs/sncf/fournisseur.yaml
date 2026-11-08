@@ -1,0 +1,20 @@
+# Fournisseur standard : trains SNCF (TGV INOUI, OUIGO, Intercités, TER), données ouvertes sans clé.
+# Grille GTFS nationale (mise à jour chaque jour) + GTFS-RT « trip updates » et « service alerts » publiés via
+# transport.data.gouv.fr (licence ODbL). Vérifié le 8 nov. 2026 : accessibles sans authentification.
+# L'API api.sncf.com (Navitia) demande un jeton (gratuit, sur inscription) : elle n'est pas nécessaire ici.
+nom: sncf
+titre: SNCF (TGV, Intercités, TER)
+description: Horaires des trains SNCF, retards et suppressions en temps réel, état d'un train par son numéro.
+modes: [train]
+source: api_ouverte
+formats: [gtfs, gtfs_rt]
+portee: nationale
+zone: France
+origine: humain
+reseau: [eu.ftp.opendatasoft.com, proxy.transport.data.gouv.fr]
+licence: ODbL (transport.data.gouv.fr, jeu « Réseau SNCF TGV, Intercités et TER »)
+parametres:
+  url_grille: https://eu.ftp.opendatasoft.com/sncf/plandata/Export_OpenData_SNCF_GTFS_NewTripId.zip
+  url_temps_reel: https://proxy.transport.data.gouv.fr/resource/sncf-gtfs-rt-trip-updates
+  url_alertes: https://proxy.transport.data.gouv.fr/resource/sncf-gtfs-rt-service-alerts
+  frequence_jours: 1

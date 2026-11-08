@@ -1,0 +1,9 @@
+python-telegram-bot[job-queue]==21.*
+faster-whisper>=1.0,<2
+av>=11,<16  # av 16+ retire metadata_errors attendu par faster-whisper
+pyyaml>=6.0,<7
+# SQLite : module sqlite3 de la bibliothèque standard (pas de dépendance).
+# Lot 3 : photos et documents (réduction des photos, conversion HEIC)
+Pillow>=10
+# Optionnel : lecture des photos HEIC envoyées comme fichier (iPhone)
+pillow-heif>=0.16

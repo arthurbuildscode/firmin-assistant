@@ -1,0 +1,54 @@
+[Unit]
+Description=Firmin Assistant - appli web conversationnelle (FastAPI, 127.0.0.1, publiée par tailscale serve)
+Documentation=file:///srv/home-os/docs/spec-lot4a-appli-web-backend.md
+After=network-online.target homeos-outils.service
+Wants=network-online.target
+# Origine publique (HOMEOS_WEB_ORIGINE) écrite par install.sh : sans Tailscale, l'appli ne démarre pas.
+ConditionPathExists=/etc/default/homeos-web-app
+
+[Service]
+# Lot 4a : deuxième canal du cœur de la conversation (même moteur que homeos-bot). Écoute 127.0.0.1:8095
+# seulement ; `tailscale serve --https=8443` la publie sur le réseau privé Tailscale (TLS du nom MagicDNS).
+# Aucun port public : ufw n'ouvre rien, le port 8443 n'existe que sur l'interface Tailscale.
+UMask=0002
+Type=simple
+User=homeos
+Group=foyer
+SupplementaryGroups=homeos
+WorkingDirectory=/srv/home-os
+# Secrets au strict besoin : clé API (personnes en cle_api, classification du routeur de modèle), jeton Telegram
+# (code de connexion de secours, liens d'invitation). Le coffre, les agendas et les jetons des outils sont lus
+# par les modules eux-mêmes dans /etc/homeos (640 root:homeos), jamais placés dans l'environnement.
+EnvironmentFile=-/etc/homeos/telegram.env
+EnvironmentFile=-/etc/homeos/anthropic.env
+# Origine, adresse d'écoute, Piper (fichier sans secret, 644).
+EnvironmentFile=/etc/default/homeos-web-app
+EnvironmentFile=-/etc/default/homeos-proxy
+Environment=HOMEOS_ROOT=/srv/home-os
+Environment=HOMEOS_DATA=/srv/home-os/data
+Environment=HOMEOS_ETAT=/var/lib/homeos
+Environment=HOMEOS_SECRETS=/etc/homeos
+Environment=PYTHONPATH=/srv/home-os
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+Environment=HF_HOME=/home/homeos/.cache/huggingface
+Environment=DISABLE_AUTOUPDATER=1
+Environment=CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/srv/home-os/.venv/bin/python -m web
+Restart=always
+RestartSec=5
+# Durcissement : même profil que homeos-bot (lot 5d). L'appli lance « sudo -u <personne> homeos-claude » comme le
+# bot : pas de NoNewPrivileges ni d'option qui l'implique (PrivateDevices, RestrictAddressFamilies,
+# SystemCallArchitectures, LockPersonality, RestrictRealtime, ProtectKernelModules, RestrictSUIDSGID), et
+# ProtectHome désactivé (le claude des personnes écrit dans /home/<personne>/.claude).
+ProtectSystem=strict
+ReadWritePaths=/srv/home-os/data -/var/lib/homeos /home -/var/log/sudo-homeos.log -/run/sudo
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+# faster-whisper (vocaux de l'appli) et un claude -p à la fois par personne.
+MemoryMax=3000M
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Firmin Assistant - surveille la configuration (administration par la conversation)
+
+[Path]
+# Écrits par l'administration par la conversation (tools/config_edition.py, tools/capacites.py), ou à la main.
+PathChanged=/srv/home-os/data/config.yaml
+PathChanged=/srv/home-os/data/capacites/etat.json
+Unit=homeos-appliquer-config.service
+
+[Install]
+WantedBy=paths.target

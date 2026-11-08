@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Kitchen Daily — tunnel de sélection (fixture anonymisée)</title>
+<style>
+  body { font-family: sans-serif; margin: 0; padding-bottom: 90px; }
+  #produits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 8px; list-style: none; }
+  .product-item { border: 1px solid #ccc; padding: 6px; }
+  .FixedBar-module-scss-module__Fb6__fixedBar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+    border-top: 1px solid #333; padding: 8px; display: flex; justify-content: space-between; }
+  .TabsMeals-module-scss-module__Tb5__current { font-weight: bold; }
+</style></head>
+<body>
+<!--
+  Fixture de test anonymisée (produits inventés) reproduisant la structure DOM observée :
+  onglets TabsMeals (…__current = étape courante), titre « Je choisis mes <strong>…</strong> », cartes
+  li.ItemProduct…__product (+ …__isOfferedExtras pour les desserts éligibles au dessert offert) > div.product-item,
+  prix « 2,<sup>99</sup>€ / unité », compteur −/input.qty/+, barre du bas ProgressBar (nbr « 1 Desserts - 0 € »,
+  bouton data-testid=confirmOrder « Je valide » puis « Je valide ma commande » à la dernière étape).
+  Le JavaScript simule le tunnel (même URL) : « Je valide » change d'étape sans rien enregistrer, seul
+  « Je valide ma commande » enregistre (window.__enregistre, POST /api-proxy/orders/<id>/bulk en http).
+  La liste est entièrement re-rendue à chaque clic, comme un rendu React.
+-->
+<header class="Header-module-scss-module__Hd1__header"><a title="Mon Espace" href="/account/shippings/upcoming"></a></header>
+<nav class="CustomerMenu-module-scss-module__Cm2__root"><button type="button">Mes livraisons</button></nav>
+<div class="Motivation-module-scss-module__Mo7__root">
+  <p>Quel est votre niveau de motivation actuellement ?</p>
+  <button type="button">1</button><button type="button">5</button>
+  <button type="button" class="Button-module-scss-module__Bt4__root" id="motivation-valide">Je valide</button>
+</div>
+<main class="super-main"><div class="lk-daily-repas"><div id="meals-content">
+  <div class="TabsMeals-module-scss-module__Tb5__tabsMeals"><ul id="onglets"></ul></div>
+  <div class="FlexibilityMeals-module-scss-module__Fx2__title"><span class="t_text">Je choisis mes <strong id="titre-etape"></strong></span></div>
+  <div class="OfferedProducts-module-scss-module__Of3__title" id="bandeau-offert"></div>
+  <div class="listing ListingProducts-module-scss-module__Ls4__listing" id="products-items"><ul class="lk-flex" id="produits"></ul></div>
+  <div class="FixedBar-module-scss-module__Fb6__fixedBar FixedBar-module-scss-module__Fb6__fixedBottom ProgressBar-module-scss-module__Pb7__barre">
+    <div class="ProgressBar-module-scss-module__Pb7__prev" id="barre-prev"></div>
+    <div class="ProgressBar-module-scss-module__Pb7__spot">
+      <span class="t_text ProgressBar-module-scss-module__Pb7__nbr" id="barre-nbr"></span>
+      <p class="t_text ProgressBar-module-scss-module__Pb7__erreur" id="barre-erreur"></p>
+    </div>
+    <div class="ProgressBar-module-scss-module__Pb7__action">
+      <button type="button" class="Button-module-scss-module__Bt4__root" data-variant="primary" data-testid="confirmOrder" id="confirm"></button>
+    </div>
+  </div>
+</div></div></main>
+<section class="Toastify" id="toast" aria-live="polite"></section>
+<script>
+(() => {  // portée locale : la page peut être rechargée par set_content dans la même fenêtre
+  const LIVRAISON_ID = /*LIVRAISON_ID*/"test";
+  const ETAT_INITIAL = /*ETAT_INITIAL*/null;
+  const OPTIONS = /*OPTIONS*/{};
+  const P = "ItemProduct-module-scss-module__Ip8__";
+  const T = "TabsMeals-module-scss-module__Tb5__";
+  const FORMULE = 6;
+  const CATALOGUE = {
+    plats: [
+      {id: "P1", titre: "Gratin de courge et lentilles", badges: ["Végétarien"]},
+      {id: "P2", titre: "Poulet rôti au thym et pommes grenaille", badges: ["protéines +"]},
+      {id: "P3", titre: "Lasagnes aux légumes du soleil", badges: []},
+      {id: "P4", titre: "Cabillaud sauce vierge et quinoa", badges: ["Contrôle calories"]},
+      {id: "P5", titre: "Bœuf mijoté aux carottes", badges: []},
+      {id: "P6", titre: "Curry de pois chiches", badges: ["Végétarien"]},
+      {id: "P7", titre: "Risotto aux champignons", badges: []},
+      {id: "P8", titre: "Saumon à l'aneth et riz", badges: ["protéines +"]},
+    ],
+    desserts: [
+      {id: "D1", titre: "Compote pomme poire", prix: 2.99},
+      {id: "D2", titre: "Pack 3 Desserts du chef", prix: 9.99, promo: true},
+      {id: "D3", titre: "Crème au chocolat", prix: 3.99, offert: true},
+      {id: "D4", titre: "Flan pâtissier", prix: 3.99, offert: true, stock: true},
+      {id: "D5", titre: "4 Yaourts nature de la ferme", prix: 0.83, barre: "4,20€", eco: "0,90€"},
+    ],
+    entrees: [
+      {id: "E1", titre: "Pack 3 Apéros", prix: 11.99, promo: true},
+      {id: "E2", titre: "Rillettes de thon", prix: 4.99},
+      {id: "E3", titre: "Velouté de potimarron", prix: 4.49, stock: true},
+    ],
+    jus: [
+      {id: "J1", titre: "Pack 3 Jus détox", prix: 9.99, promo: true},
+      {id: "J2", titre: "Shot gingembre citron", prix: 2.49},
+    ],
+  };
+  const ORDRE = ["plats", "desserts", "entrees", "jus"];
+  const LIBELLE = {plats: "Plats", desserts: "Desserts", entrees: "Entrées, Soupes & Apéros", jus: "Jus et shots detox"};
+  const TITRE = {plats: "plats", desserts: "desserts", entrees: "entrées, soupes & apéros", jus: "jus et shots detox"};
+  const ETAT_DEFAUT = {plats: {P1: 2, P2: 1, P3: 1, P4: 1, P5: 1}, desserts: {D3: 1}, entrees: {}, jus: {J2: 2}};
+  let etat = JSON.parse(JSON.stringify(ETAT_INITIAL || ETAT_DEFAUT));
+  let etape = 0;
+  window.__etapes = 0; window.__commandes = 0; window.__raz = 0; window.__motivation = false; window.__enregistre = null;
+
+  const q = (cat, id) => Number((etat[cat] || {})[id] || 0);
+  const totalPlats = () => CATALOGUE.plats.reduce((s, p) => s + q("plats", p.id), 0);
+  const nbExtras = (cat) => CATALOGUE[cat].reduce((s, p) => s + q(cat, p.id), 0);
+  function montant(cat) {
+    let t = 0; const offerts = [];
+    CATALOGUE[cat].forEach(p => { const n = q(cat, p.id); t += n * p.prix; if (p.offert && n > 0) offerts.push(p.prix); });
+    if (offerts.length) t -= Math.min(...offerts);
+    return Math.round(t * 100) / 100;
+  }
+  const euros = (x) => x === 0 ? "0" : x.toFixed(2).replace(".", ",");
+  function prixHtml(p) { const [e, c] = p.prix.toFixed(2).split("."); return `${e},<sup>${c}</sup>€ / unité`; }
+
+  function carte(cat, p) {
+    const extra = cat !== "plats";
+    const cls = [P + "product", extra ? P + "hasPrice" : P + "isDailyStyle2", p.offert ? P + "isOfferedExtras" : ""].join(" ");
+    const badges = (p.badges || []).map(b => `<span class="Badge-module-scss-module__Bg9__badge">${b}</span>`).join("");
+    return `<li class="${cls}" data-testid="item-${p.id}"><div class="product-item ${P}productItem">
+      <div class="${P}vignette" role="presentation"><div class="${P}contenaire"><img alt="" width="32" height="32"></div>
+        ${p.promo ? `<span class="${P}promotion">promo</span>` : ""}</div>
+      <div class="${P}toolsCol"><div class="${P}name" role="presentation">
+        ${extra ? "" : `<div class="${P}tags">${badges}</div>`}<h3 class="t_text">${p.titre}</h3></div>
+        <div class="${P}priceTools">${extra ? `<div class="t_text ${P}price">${prixHtml(p)}</div>` : ""}
+          <div class="${P}tools"><div class="${P}quantite">
+            <button type="button" class="${P}moins"><span>-</span></button>
+            <input class="input-text qty" readonly step="1" min="0" type="text" value="${q(cat, p.id)}">
+            <button type="button" class="${P}plus"><span>+</span></button>
+          </div></div></div>
+        ${p.barre ? `<div class="${P}promo"><u>${p.barre}</u><span>Économisez</span><b>${p.eco}</b></div>` : ""}
+        ${p.stock ? `<div class="${P}stockAvailablily"><div class="t_text">Stock limité : plus que quelques plats restants !</div></div>` : ""}
+      </div></div></li>`;
+  }
+
+  function rendre() {
+    const cat = ORDRE[etape];
+    document.getElementById("onglets").innerHTML = ORDRE.map((c, i) => {
+      const cls = [T + "dot", i <= etape ? T + "active" : "", i === etape ? T + "current" : "", T + "show"].join(" ");
+      return `<li class="${cls}"><button type="button"><strong id="tab_${c}"><span>${LIBELLE[c]}</span></strong></button></li>`;
+    }).join(`<li class="${T}separate"></li>`);
+    document.getElementById("titre-etape").textContent = TITRE[cat];
+    document.getElementById("bandeau-offert").textContent = cat === "desserts"
+      ? "🎁 Et profitez de 1 dessert OFFERT marqué du picto 🎁 à chaque livraison !" : "";
+    document.getElementById("produits").innerHTML = CATALOGUE[cat].map(p => carte(cat, p)).join("");
+    const prev = document.getElementById("barre-prev");
+    const nbr = document.getElementById("barre-nbr");
+    if (cat === "plats") {
+      prev.innerHTML = '<button type="button" class="Button-module-scss-module__Bt4__root secondary ProgressBar-module-scss-module__Pb7__reset" id="raz">Remise à zéro</button>';
+      nbr.innerHTML = `<span>${totalPlats()}</span>/ ${FORMULE} Plats`;
+    } else {
+      prev.innerHTML = `<button type="button" class="Button-module-scss-module__Bt4__root secondary ProgressBar-module-scss-module__Pb7__prevTab" id="precedent">${LIBELLE[ORDRE[etape - 1]]}</button>`;
+      nbr.textContent = `${nbExtras(cat)} ${LIBELLE[cat]} - ${euros(montant(cat))} €`;
+    }
+    document.getElementById("confirm").textContent = etape === ORDRE.length - 1 ? "Je valide ma commande" : "Je valide";
+  }
+
+  document.getElementById("produits").addEventListener("click", (ev) => {
+    const bouton = ev.target.closest("button");
+    const li = ev.target.closest("li");
+    if (!bouton || !li) return;
+    const cat = ORDRE[etape];
+    const id = li.dataset.testid.slice(5);
+    etat[cat] = etat[cat] || {};
+    const n = q(cat, id);
+    if (bouton.className.endsWith("plus")) {
+      if (cat === "plats" && totalPlats() >= FORMULE) return;
+      if (cat !== "plats" && (OPTIONS.bloques || []).includes(id)) return;  // stock épuisé simulé
+      etat[cat][id] = n + 1;
+    } else if (n > 0) {
+      etat[cat][id] = n - 1;
+    }
+    setTimeout(rendre, 60);
+  });
+
+  document.querySelector(".FixedBar-module-scss-module__Fb6__fixedBar").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button");
+    if (!b) return;
+    if (b.id === "raz") {
+      window.__raz += 1; etat.plats = {};
+      if (OPTIONS.razEffaceExtras) { etat.desserts = {}; etat.entrees = {}; etat.jus = {}; }
+      setTimeout(rendre, 60);
+    } else if (b.id === "precedent") {
+      etape -= 1; setTimeout(rendre, 150);
+    } else if (b.id === "confirm") {
+      if (etape === 0 && totalPlats() !== FORMULE) {
+        document.getElementById("barre-erreur").textContent = `Veuillez choisir ${FORMULE} plats`;
+        return;
+      }
+      if (etape < ORDRE.length - 1) { window.__etapes += 1; etape += 1; setTimeout(rendre, 250); return; }
+      window.__commandes += 1;
+      window.__enregistre = JSON.parse(JSON.stringify(etat));
+      const fini = () => { document.getElementById("toast").textContent = "Votre commande a bien été enregistrée"; };
+      if (location.protocol.startsWith("http")) {
+        fetch(`/api-proxy/orders/${LIVRAISON_ID}/bulk`, {method: "POST", body: JSON.stringify(etat)}).then(fini);
+      } else { fini(); }
+    }
+  });
+  document.getElementById("motivation-valide").addEventListener("click", () => { window.__motivation = true; });
+  rendre();
+})();
+</script>
+</body></html>

@@ -1,0 +1,70 @@
+{
+  "gtfsUrl": "https://app.mecatran.com/utw/ws/gtfsfeed/static/mamp-c13?apiKey=3675433c4f196f4d3c6b62316e130536196f0336",
+  "siriBase": "https://siri.lametropolemobilite.fr/",
+  "requestorRef": "open-data",
+  "tempsReel": {
+    "CTZ_RDT13": {
+      "prefixe": "CTZ3",
+      "lignes": [
+        "100",
+        "102",
+        "2072",
+        "240",
+        "38",
+        "48",
+        "49",
+        "50",
+        "5069",
+        "51",
+        "53",
+        "55",
+        "68",
+        "69",
+        "72",
+        "78",
+        "79",
+        "C257",
+        "C303",
+        "C425",
+        "C480",
+        "C602",
+        "C604",
+        "C612",
+        "S100",
+        "S103",
+        "S104",
+        "S108",
+        "S109",
+        "S110"
+      ]
+    },
+    "CTZ_SUMA": {
+      "prefixe": "CTZ1",
+      "lignes": [
+        "15",
+        "16",
+        "25",
+        "36",
+        "39",
+        "5015",
+        "5711",
+        "88",
+        "89",
+        "S105",
+        "S106",
+        "S107",
+        "S500"
+      ]
+    },
+    "CTZ_KEOLIS": {
+      "prefixe": "CTZ2",
+      "lignes": [
+        "33",
+        "34",
+        "64"
+      ]
+    }
+  },
+  "nomsLignes": {},
+  "_note": "tempsReel : lignes listées par LinesDiscovery sur chaque flux SIRI (oct. 2026)"
+}

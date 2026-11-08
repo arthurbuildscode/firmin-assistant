@@ -1,0 +1,201 @@
+:root {
+  --fond: #eef1f5;
+  --carte: #ffffff;
+  --texte: #12151b;
+  --doux: #5d6573;
+  --trait: #e2e6ec;
+  --accent: #0b63ce;
+  --ok: #0f7a43;
+  --ok-fond: #e3f5ea;
+  --retard: #b45309;
+  --retard-fond: #fdf0dc;
+  --grave: #b91c1c;
+  --grave-fond: #fde4e4;
+  --neutre-fond: #eef0f3;
+  --ombre: 0 1px 2px rgb(16 24 40 / .06), 0 4px 16px rgb(16 24 40 / .06);
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #0d1014;
+    --carte: #171b21;
+    --texte: #eef1f5;
+    --doux: #98a1ae;
+    --trait: #262b33;
+    --accent: #5aa2ff;
+    --ok: #4ade80;
+    --ok-fond: #13301f;
+    --retard: #fbbf24;
+    --retard-fond: #33270d;
+    --grave: #f87171;
+    --grave-fond: #3a1616;
+    --neutre-fond: #22272f;
+    --ombre: none;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main { max-width: 480px; margin: 0 auto; padding: 20px 16px 32px; }
+a { color: var(--accent); }
+
+/* En-tête */
+.surtitre { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--doux); margin: 0; }
+h1 { font-size: 1.9rem; line-height: 1.15; margin: 2px 0 2px; letter-spacing: -.01em; }
+.commune { color: var(--doux); margin: 0 0 16px; }
+
+/* Choix du sens */
+.sens {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
+  background: var(--neutre-fond); border-radius: 14px; margin-bottom: 12px;
+}
+.sens a {
+  text-align: center; padding: 10px 6px; border-radius: 10px; text-decoration: none;
+  color: var(--doux); font-weight: 600; font-size: .95rem;
+}
+.sens a.actif { background: var(--carte); color: var(--texte); box-shadow: var(--ombre); }
+
+.lignes { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 18px; color: var(--doux); font-size: .9rem; }
+.lignes span { display: inline-flex; align-items: center; gap: 6px; }
+
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 2.3em; height: 1.7em; padding: 0 7px; border-radius: 7px;
+  font-weight: 800; font-size: .95rem;
+}
+.badge.grand { min-width: 2.6em; height: 2em; font-size: 1.1rem; border-radius: 8px; }
+
+/* Cartes */
+.carte {
+  background: var(--carte); border: 1px solid var(--trait); border-radius: 18px;
+  padding: 16px 18px; margin-bottom: 12px; box-shadow: var(--ombre);
+}
+.etiquette-carte { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--doux); margin: 0 0 10px; }
+.vers { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.vers small { display: block; color: var(--doux); font-weight: 400; font-size: .85rem; }
+
+.principal .horaire { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 14px 0 12px; }
+.principal .heure { font-size: 3.6rem; font-weight: 800; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.principal .dans { font-size: 1.25rem; font-weight: 700; text-align: right; }
+.suivant .horaire { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 10px 0 10px; }
+.suivant .heure { font-size: 2rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.suivant .dans { font-weight: 700; }
+
+.statut { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 10px; font-weight: 600; font-size: .92rem; background: var(--neutre-fond); color: var(--doux); }
+.statut.ok { background: var(--ok-fond); color: var(--ok); }
+.statut.retard { background: var(--retard-fond); color: var(--retard); }
+.statut.grave { background: var(--grave-fond); color: var(--grave); }
+
+/* Listes */
+h2 { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--doux); margin: 22px 4px 8px; }
+.liste { list-style: none; margin: 0; padding: 0; }
+.liste li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--trait); }
+.liste li:last-child { border-bottom: 0; }
+.liste .dest { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.liste .info { font-size: .82rem; color: var(--doux); }
+.liste .info.ok { color: var(--ok); }
+.liste .info.retard { color: var(--retard); }
+.liste .info.grave { color: var(--grave); }
+.liste .h { white-space: nowrap; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.liste li.passe { opacity: .55; }
+.barre { text-decoration: line-through; color: var(--doux); font-weight: 400; margin-right: 4px; }
+
+.vide { text-align: center; color: var(--doux); padding: 18px; }
+.pied { color: var(--doux); font-size: .82rem; margin-top: 22px; line-height: 1.5; }
+.direct { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+/* Point « en direct » : fixe. (Une ancienne pulsation animée empêchait l'affichage sur certains Chrome Android.) */
+.direct::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.direct.hors::before { background: var(--retard); }
+@media print { .ne-pas-imprimer { display: none; } body { background: #fff; } }
+
+/* Navigation */
+.retour { display: inline-flex; align-items: center; gap: 4px; color: var(--doux); text-decoration: none; font-size: .9rem; font-weight: 600; margin-bottom: 10px; }
+.retour:hover { color: var(--texte); }
+.recherche {
+  width: 100%; padding: 12px 14px; font: inherit; border-radius: 12px; margin: 0 0 14px;
+  border: 1px solid var(--trait); background: var(--carte); color: var(--texte); box-shadow: var(--ombre);
+}
+.recherche:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Accueil : liste des lignes */
+.grille-lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.grille-lignes a {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+  padding: 12px 14px; background: var(--carte); border: 1px solid var(--trait); border-radius: 14px;
+  color: var(--texte); text-decoration: none; box-shadow: var(--ombre);
+}
+.grille-lignes a:hover { border-color: var(--accent); }
+.grille-lignes .nom { font-weight: 600; }
+.grille-lignes .tr { font-size: .75rem; color: var(--ok); font-weight: 600; white-space: nowrap; }
+.chevron { color: var(--doux); font-size: 1.2rem; }
+
+/* Page ligne : arrêts en frise */
+.frise { list-style: none; margin: 0; padding: 4px 0; position: relative; }
+.frise li a {
+  display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px;
+  padding: 9px 4px; color: var(--texte); text-decoration: none; border-radius: 10px;
+}
+.frise li a:hover { background: var(--neutre-fond); }
+.frise .point { position: relative; width: 28px; height: 100%; display: flex; justify-content: center; align-items: center; }
+.frise .point::before { content: ""; position: absolute; top: -10px; bottom: -10px; width: 4px; background: var(--couleur-ligne, var(--accent)); }
+.frise li:first-child .point::before { top: 50%; }
+.frise li:last-child .point::before { bottom: 50%; }
+.frise .point::after { content: ""; position: relative; width: 12px; height: 12px; border-radius: 50%; background: var(--carte); border: 3px solid var(--couleur-ligne, var(--accent)); }
+.frise .nom-arret { font-weight: 600; }
+.frise .commune-arret { display: block; font-size: .8rem; color: var(--doux); font-weight: 400; }
+.autres { display: flex; flex-wrap: wrap; gap: 8px; }
+.autres a { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--texte); font-size: .9rem; padding: 6px 10px 6px 6px; border-radius: 10px; background: var(--neutre-fond); }
+.liens-bas { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: .9rem; }
+button { font: inherit; font-weight: 600; padding: 8px 16px; border-radius: 10px; border: 1px solid var(--trait); background: var(--carte); color: var(--texte); cursor: pointer; }
+.avert { margin: 8px 0 0; font-size: .85rem; color: var(--retard); }
+.liste .info.avert { margin: 2px 0 0; color: var(--retard); }
+.sens span.inactif { text-align: center; padding: 10px 6px; color: var(--doux); opacity: .45; font-weight: 600; font-size: .95rem; cursor: not-allowed; }
+
+/* Cartes simplifiées (page d'arrêt) */
+.lignes span { line-height: 1.35; }
+.lignes strong { color: var(--texte); font-size: 1.05rem; }
+.tete-carte { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tete-carte .etiquette-carte { margin: 0; }
+.vers-court { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 1.05rem; }
+.principal .horaire { margin: 10px 0 12px; }
+.principal .dans { font-size: 1.35rem; }
+.statut { font-size: 1rem; }
+.liste li { grid-template-columns: 4.2em minmax(0, 1fr) auto; }
+.liste .h { text-align: left; font-size: 1.25rem; }
+.liste .dest { font-weight: 600; }
+.liste .info { font-size: .9rem; font-weight: 600; }
+.dans-court { font-weight: 700; white-space: nowrap; font-size: .95rem; }
+details.replie { margin-top: 22px; }
+details.replie summary { cursor: pointer; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--doux); margin: 0 4px 8px; }
+.lignes { margin-bottom: 4px; }
+.terminus-unique { margin: 0 0 16px; font-size: 1.2rem; font-weight: 800; }
+.vers-court { flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
+.liste .dest { white-space: normal; overflow-wrap: anywhere; }
+/* Pictogramme « en direct » : fixe (pas d'animation, cf. souci d'affichage Chrome Android) */
+.ondes { flex: none; vertical-align: -4px; }
+.liste .info .ondes { width: 15px; height: 15px; margin-right: 4px; vertical-align: -3px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Heure mise à jour au-dessus, horaire initial barré en dessous */
+.heure-pile { display: inline-flex; flex-direction: column; line-height: 1; }
+.heure-pile .ancienne { font-size: .38em; font-weight: 600; color: var(--doux); margin-top: 6px; text-decoration-thickness: 2px; }
+.liste .heure-pile .ancienne { font-size: .7em; margin-top: 2px; }
+button.plus { display: block; width: 100%; margin-top: 10px; padding: 12px; font-size: 1rem; }
+
+/* « ⓘ il y a … » : âge de la dernière position du bus, même style partout :
+   à droite dans le bandeau d'état des cartes, sur sa propre petite ligne dans la liste */
+.vu { font-size: .78rem; font-weight: 500; color: var(--doux); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.statut .vu { margin-left: auto; padding-left: 10px; color: inherit; opacity: .7; }
+.liste .vu { display: block; margin-top: 2px; }
+
+/* En-tête d'arrêt : badge de ligne + nom, puis commune ; le terminus est dans l'onglet du sens actif */
+.titre-arret { display: flex; align-items: center; gap: 10px; }
+.titre-arret h1 { margin: 0; }
+.titre-arret + .commune { margin-top: 4px; }
+.sens a, .sens span.inactif { display: flex; flex-direction: column; justify-content: center; }
+.sens a small { display: block; margin-top: 2px; font-size: .78rem; font-weight: 500; color: var(--doux); }
+.sens { margin-bottom: 18px; }

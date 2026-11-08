@@ -1,0 +1,15 @@
+# Firmin Assistant — profil AppArmor du Chromium de Playwright (lot 5d, audit point 10).
+# Ubuntu 24.04 restreint les espaces de noms utilisateur non privilégiés
+# (kernel.apparmor_restrict_unprivileged_userns=1), ce qui casse le sandbox de Chromium. Plutôt que de
+# désactiver ce réglage pour toute la machine, ce profil l'autorise pour les seuls binaires Chromium
+# installés par Playwright dans /opt/playwright (même approche que les profils chrome/msedge d'Ubuntu).
+# Installé par install.sh dans /etc/apparmor.d/ si AppArmor est présent.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile homeos-chromium /opt/playwright/chromium{,_headless_shell}-*/chrome-linux{,64}/{chrome,headless_shell} flags=(unconfined) {
+  userns,
+
+  # Ajustements locaux éventuels
+  include if exists <local/homeos-chromium>
+}

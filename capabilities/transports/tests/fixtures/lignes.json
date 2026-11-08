@@ -1,0 +1,386 @@
+[
+ {
+  "id": "15",
+  "ligne": "15",
+  "nom": "Villeneuve ⇄ Saint-Aubin",
+  "couleur": "#009641",
+  "texte": "#ffffff",
+  "tempsReel": true
+ },
+ {
+  "id": "16",
+  "ligne": "16",
+  "nom": "Grandport ⇄ Clairval",
+  "couleur": "#E4032E",
+  "texte": "#000000",
+  "tempsReel": true
+ },
+ {
+  "id": "25",
+  "ligne": "25",
+  "nom": "Montclair ⇄ Grandport",
+  "couleur": "#B27400",
+  "texte": "#000000",
+  "tempsReel": true
+ },
+ {
+  "id": "33",
+  "ligne": "33",
+  "nom": "Saint-Aubin ⇄ Bellerive",
+  "couleur": "#323E69",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "34",
+  "ligne": "34",
+  "nom": "Beaulieu ⇄ Sauveterre",
+  "couleur": "#AE0F0A",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "36",
+  "ligne": "36",
+  "nom": "Les Ormes ⇄ Fontbelle",
+  "couleur": "#A54D5D",
+  "texte": "#000000",
+  "tempsReel": true
+ },
+ {
+  "id": "38",
+  "ligne": "38",
+  "nom": "Fontbelle ⇄ Castelnau",
+  "couleur": "#E9E44F",
+  "texte": "#000000",
+  "tempsReel": true
+ },
+ {
+  "id": "39",
+  "ligne": "39",
+  "nom": "Rochefort ⇄ Beaulieu",
+  "couleur": "#E6007D",
+  "texte": "#ffffff",
+  "tempsReel": true
+ },
+ {
+  "id": "48",
+  "ligne": "48",
+  "nom": "Villeneuve Centre-Grandport",
+  "couleur": "#E4032E",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "49",
+  "ligne": "49",
+  "nom": "Valmont ⇄ Montclair",
+  "couleur": "#C8D300",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "50",
+  "ligne": "50",
+  "nom": "Clairval ⇄ Valmont",
+  "couleur": "#004F9F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "7",
+  "ligne": "7",
+  "nom": "Villeneuve ⇄ Grandport",
+  "couleur": "#009FE3",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "9",
+  "ligne": "9",
+  "nom": "Mirabel ⇄ Rochefort",
+  "couleur": "#D25D1A",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "55",
+  "ligne": "55",
+  "nom": "Castelnau ⇄ Pradelle",
+  "couleur": "#67A2BD",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "64",
+  "ligne": "64",
+  "nom": "Pradelle ⇄ Les Ormes",
+  "couleur": "#005F27",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "68",
+  "ligne": "68",
+  "nom": "Sauveterre ⇄ Mirabel",
+  "couleur": "#00628B",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "69",
+  "ligne": "69",
+  "nom": "Port-Joli ⇄ Villeneuve",
+  "couleur": "#E6005B",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "72",
+  "ligne": "72",
+  "nom": "Valmont ⇄ Montclair",
+  "couleur": "#A1DAF8",
+  "texte": "#000000",
+  "tempsReel": true
+ },
+ {
+  "id": "78",
+  "ligne": "78",
+  "nom": "Montclair ⇄ Grandport",
+  "couleur": "#650816",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "79",
+  "ligne": "79",
+  "nom": "Saint-Aubin ⇄ Bellerive",
+  "couleur": "#E41F1A",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "88",
+  "ligne": "88",
+  "nom": "Beaulieu ⇄ Sauveterre",
+  "couleur": "#4E456D",
+  "texte": "#ffffff",
+  "tempsReel": true
+ },
+ {
+  "id": "89",
+  "ligne": "89",
+  "nom": "Les Ormes ⇄ Fontbelle",
+  "couleur": "#766F6C",
+  "texte": "#ffffff",
+  "tempsReel": true
+ },
+ {
+  "id": "100",
+  "ligne": "100",
+  "nom": "Fontbelle ⇄ Castelnau",
+  "couleur": "#FBB800",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "102",
+  "ligne": "102",
+  "nom": "Rochefort ⇄ Beaulieu",
+  "couleur": "#009641",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "240",
+  "ligne": "240",
+  "nom": "Bellerive ⇄ Port-Joli",
+  "couleur": "#702283",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "2072",
+  "ligne": "2072",
+  "nom": "Valmont ⇄ Montclair",
+  "couleur": "#A1D9F7",
+  "texte": "#000000",
+  "tempsReel": true
+ },
+ {
+  "id": "5015",
+  "ligne": "5015",
+  "nom": "Clairval ⇄ Valmont",
+  "couleur": "#B51F1F",
+  "texte": "#000000",
+  "tempsReel": true
+ },
+ {
+  "id": "5069",
+  "ligne": "5069",
+  "nom": "Port-Joli ⇄ Villeneuve",
+  "couleur": "#B51F1F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "5711",
+  "ligne": "5711",
+  "nom": "Mirabel ⇄ Rochefort",
+  "couleur": "#F45C1B",
+  "texte": "#000000",
+  "tempsReel": true
+ },
+ {
+  "id": "a1",
+  "ligne": "A1",
+  "nom": "Castelnau ⇄ Pradelle",
+  "couleur": "#FFD300",
+  "texte": "#000000",
+  "tempsReel": false
+ },
+ {
+  "id": "a2",
+  "ligne": "A2",
+  "nom": "Pradelle ⇄ Les Ormes",
+  "couleur": "#2DB8C5",
+  "texte": "#FFFFFF",
+  "tempsReel": false
+ },
+ {
+  "id": "c257",
+  "ligne": "C257",
+  "nom": "Sauveterre ⇄ Mirabel",
+  "couleur": "#E53012",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "c303",
+  "ligne": "C303",
+  "nom": "Villeneuve ⇄ Saint-Aubin",
+  "couleur": "#E53012",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "c425",
+  "ligne": "C425",
+  "nom": "Grandport ⇄ Clairval",
+  "couleur": "#E53012",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "c480",
+  "ligne": "C480",
+  "nom": "Montclair ⇄ Grandport",
+  "couleur": "#B51F1F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "c602",
+  "ligne": "C602",
+  "nom": "Saint-Aubin ⇄ Bellerive",
+  "couleur": "#569388",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "c604",
+  "ligne": "C604",
+  "nom": "Beaulieu ⇄ Sauveterre",
+  "couleur": "#B51F1F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "c612",
+  "ligne": "C612",
+  "nom": "Les Ormes ⇄ Fontbelle",
+  "couleur": "#E53012",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "s100",
+  "ligne": "S100",
+  "nom": "Fontbelle ⇄ Castelnau",
+  "couleur": "#B51F1F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "s103",
+  "ligne": "S103",
+  "nom": "Rochefort ⇄ Beaulieu",
+  "couleur": "#B51F1F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "s104",
+  "ligne": "S104",
+  "nom": "Bellerive ⇄ Port-Joli",
+  "couleur": "#B51F1F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "s105",
+  "ligne": "S105",
+  "nom": "Valmont ⇄ Montclair",
+  "couleur": "#B51F1F",
+  "texte": "#ffffff",
+  "tempsReel": true
+ },
+ {
+  "id": "s106",
+  "ligne": "S106",
+  "nom": "Clairval ⇄ Valmont",
+  "couleur": "#B51F1F",
+  "texte": "#ffffff",
+  "tempsReel": true
+ },
+ {
+  "id": "s107",
+  "ligne": "S107",
+  "nom": "Port-Joli ⇄ Villeneuve",
+  "couleur": "#B51F1F",
+  "texte": "#ffffff",
+  "tempsReel": true
+ },
+ {
+  "id": "s108",
+  "ligne": "S108",
+  "nom": "Mirabel ⇄ Rochefort",
+  "couleur": "#B51F1F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "s109",
+  "ligne": "S109",
+  "nom": "Castelnau ⇄ Pradelle",
+  "couleur": "#B51F1F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "s110",
+  "ligne": "S110",
+  "nom": "Pradelle ⇄ Les Ormes",
+  "couleur": "#B51F1F",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ {
+  "id": "s500",
+  "ligne": "S500",
+  "nom": "Sauveterre ⇄ Mirabel",
+  "couleur": "#B51F1F",
+  "texte": "#ffffff",
+  "tempsReel": true
+ }
+]

@@ -1,0 +1,59 @@
+# Capacité « courses & promos ». Contrat : CONTRACT.md §9 ; spec : docs/spec-capacite-courses-promos.md.
+# Premier lot : apprentissage par les tickets (photo, mail, PDF), prix habituels, compteur d'économies.
+# Aucune navigation sur un site marchand dans ce lot (reseau vide) ; aucune action hors du foyer.
+nom: courses_promos
+titre: Courses et promos
+description: Apprend ce que le foyer achète et à quel prix à partir de ses tickets de caisse, et tient le compte honnête des économies.
+version: 1
+statut: essai             # tout est en lecture ou en écriture locale ; reste en essai jusqu'à la validation par le foyer
+origine: humain
+prefixe: promos           # outils promos_* (les outils courses_* sont ceux de la liste de courses du socle)
+personnes: []
+# Facultatif (lot 3 de la spec) : boîte mail en lecture seule pour lire les tickets envoyés par l'enseigne.
+# Rien ne le lit dans ce lot ; sans lui, les tickets arrivent par photo ou par fichier déposé.
+secrets:
+  - cle: courses_promos/personne   # gabarit : clés réelles courses_promos/<linux_user>
+    type: identifiants
+    champs: [identifiant, mot_de_passe]
+    par_personne: true
+crons:
+  # Veille hebdomadaire : ne fait rien tant que le paramètre `mode` vaut « a_choisir » (défaut). Dans ce lot, elle
+  # ne fait que rapprocher les tickets reçus des économies estimées ; elle ne parle jamais (aucun seuil déclaré).
+  - nom: veille_promos
+    quand: "Mon 05:30"
+actions_avec_effet: []    # aucune action hors du foyer : pas de panier, pas de commande, pas de compte client
+reseau: []                # aucun site lu dans ce lot (sources web : voir la spec, §2)
+parametres:
+  - cle: enseigne
+    type: texte
+    question: Dans quelle enseigne fais-tu la plupart de tes courses ?
+    obligatoire: true
+  - cle: magasin
+    type: texte
+    question: Quel magasin précisément (ville ou nom du magasin) ?
+  - cle: mode
+    type: choix
+    choix: [a_choisir, tickets, tickets_et_catalogue, drive_lecture]
+    defaut: a_choisir
+    question: Comment veux-tu que je connaisse tes prix ? Par tes tickets seulement, ou aussi par le catalogue de ton magasin ?
+  - cle: carte_fidelite
+    type: booleen
+    defaut: false
+    question: As-tu la carte de fidélité de cette enseigne ?
+  - cle: jours_courses
+    type: texte
+    question: Quel jour fais-tu tes courses d'habitude ?
+  - cle: seuil_pourcentage   # annoncé, pas demandé ; modifiable en conversation
+    type: nombre
+    defaut: 25
+    question: À partir de quel pourcentage de baisse une promo vaut-elle le coup pour toi ?
+  - cle: seuil_euros
+    type: nombre
+    defaut: 3
+    question: À partir de combien d'euros d'économie veux-tu que je te signale une promo ?
+  - cle: imap_serveur        # lot 3 de la spec : lecture des tickets dans la boîte mail
+    type: texte
+    question: Quel est le serveur de ta boîte mail (pour lire les tickets envoyés par l'enseigne) ?
+  - cle: tickets_expediteurs # lot 3, adresses d'envoi des tickets, séparées par des virgules
+    type: texte
+    question: De quelle adresse l'enseigne t'envoie-t-elle tes tickets par mail ?

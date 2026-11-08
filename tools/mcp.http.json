@@ -1,0 +1,12 @@
+{
+  "_commentaire": "Lot 7 — modèle de configuration MCP HTTP (serveur d'outils persistant homeos-outils, 127.0.0.1:8090). En production, le wrapper /usr/local/sbin/homeos-claude génère ~/.config/homeos/mcp.json (600) avec le jeton de la personne écrit en clair et le passe à claude avec --strict-mcp-config ; ce modèle sert aux essais à la main : HOMEOS_JETON=\"$(cat ~/.config/homeos/jeton)\" claude --mcp-config tools/mcp.http.json --strict-mcp-config (Claude Code remplace ${VAR} et ${VAR:-défaut} dans url et headers). tools/mcp.json reste la configuration stdio (repli, HOMEOS_OUTILS=stdio) et tools/mcp.dev.json celle du développement.",
+  "mcpServers": {
+    "homeos": {
+      "type": "http",
+      "url": "${HOMEOS_OUTILS_URL:-http://127.0.0.1:8090/mcp}",
+      "headers": {
+        "Authorization": "Bearer ${HOMEOS_JETON}"
+      }
+    }
+  }
+}

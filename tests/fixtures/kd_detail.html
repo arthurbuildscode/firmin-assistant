@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Kitchen Daily — détail d'une livraison (fixture anonymisée)</title>
+<style>
+  body { font-family: sans-serif; margin: 0; }
+  .Switch-module-scss-module__Sw2__switch { position: relative; display: inline-flex; gap: 6px; cursor: pointer; }
+  /* Case à cocher masquée (taille nulle) : le clic doit passer par le <label>, comme sur beaucoup d'interrupteurs. */
+  .Switch-module-scss-module__Sw2__input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .Switch-module-scss-module__Sw2__slider { display: inline-block; width: 40px; height: 20px; background: #ccc; border-radius: 10px; }
+  .Modal-module-scss-module__Md3__overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); }
+</style></head>
+<body>
+<!--
+  Fixture de test anonymisée. La structure de l'interrupteur « Je veux ma livraison » n'a PAS été capturée sur le
+  vrai site (seulement décrite : « Non/Oui ») : cette page en propose une forme plausible (case à cocher masquée dans
+  un <label>, modale de confirmation quand on désactive) pour tester la logique ; à vérifier sur le site réel.
+-->
+<header><a title="Mon Espace" href="/account/shippings/upcoming"></a></header>
+<nav class="CustomerMenu-module-scss-module__Cm2__root"><button type="button">Mes livraisons</button></nav>
+<main>
+  <div class="ShipmentDetail-module-scss-module__Sd1__banner">Livraison du 19/11/2026 - 110000002 — Modifiable jusqu'au 14/11/2026 à 23h59</div>
+  <div class="ShipmentDetail-module-scss-module__Sd1__wantRow">
+    <p class="t_text">Je veux ma livraison</p>
+    <label class="Switch-module-scss-module__Sw2__switch">
+      <span>Non</span>
+      <input type="checkbox" class="Switch-module-scss-module__Sw2__input" id="voulue">
+      <span class="Switch-module-scss-module__Sw2__slider"></span>
+      <span>Oui</span>
+    </label>
+  </div>
+  <p>Ma formule 6 plats</p>
+  <button type="button">Modifier ma formule</button> <button type="button">Modifier mes plats</button>
+  <a href="/account/shippings/edit/select-meal/quotidien/x">Choisir mes repas</a>
+</main>
+<div id="modale" hidden role="dialog" class="Modal-module-scss-module__Md3__overlay">
+  <p>Vous ne souhaitez pas être livré cette semaine ?</p>
+  <button type="button" id="modale-annuler">Annuler</button>
+  <button type="button" id="modale-confirmer">Confirmer</button>
+</div>
+<script>
+(() => {  // portée locale : la page peut être rechargée par set_content dans la même fenêtre
+  const LIVRAISON_ID = /*LIVRAISON_ID*/"test";
+  const VOULUE = /*VOULUE*/true;
+  const input = document.getElementById("voulue");
+  const modale = document.getElementById("modale");
+  input.checked = VOULUE;
+  window.__voulue = VOULUE; window.__modales = 0;
+  function enregistrer(v) {
+    window.__voulue = v;
+    if (location.protocol.startsWith("http")) {
+      fetch(`/api-proxy/shippings/${LIVRAISON_ID}/want`, {method: "POST", body: JSON.stringify({voulue: v})});
+    }
+  }
+  input.addEventListener("change", () => {
+    if (!input.checked) { window.__modales += 1; modale.hidden = false; } else { enregistrer(true); }
+  });
+  document.getElementById("modale-confirmer").addEventListener("click", () => { modale.hidden = true; enregistrer(false); });
+  document.getElementById("modale-annuler").addEventListener("click", () => { modale.hidden = true; input.checked = true; });
+})();
+</script>
+</body></html>

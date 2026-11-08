@@ -1,0 +1,6 @@
+# Grille GTFS Cartreize (≈ 25 Mo) : jamais versionnée, générée à l'installation dans
+# data/capacites/transports/cartreize/gtfs (service/data est un lien symbolique vers ce dossier,
+# créé par capabilities/transports/install.sh)
+fournisseurs/cartreize/service/data
+fournisseurs/cartreize/service/data/
+fournisseurs/cartreize/service/node_modules/

@@ -1,0 +1,15 @@
+# Modèle standard : tout réseau (métro, tram, bus…) dont l'autorité publie une grille GTFS et, si possible, un flux
+# GTFS-RT (catalogue national : transport.data.gouv.fr). Jamais utilisé tel quel : le foyer en crée une instance
+# (transports_reseau_ajouter, validée par un propriétaire), rangée dans data/capacites/transports/reseaux.yaml avec
+# ses adresses ; les hôtes de ces adresses sont alors approuvés pour la capacité.
+nom: gtfs_rt
+titre: Réseau GTFS / GTFS-RT (modèle)
+description: Horaires théoriques (GTFS) et temps réel (GTFS-RT) d'un réseau qui publie ses données ouvertes.
+modes: [bus, metro, tram, train, navette, bateau]
+source: api_ouverte
+formats: [gtfs, gtfs_rt]
+portee: locale
+origine: humain
+modele: true
+parametres:
+  frequence_jours: 7

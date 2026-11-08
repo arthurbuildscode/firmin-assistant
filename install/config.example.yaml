@@ -1,0 +1,80 @@
+# Firmin Assistant — configuration (copier vers /srv/home-os/data/config.yaml)
+# Valeurs d'exemple : remplace les telegram_id et groupe_telegram_id par les vrais.
+# Pour connaître ton telegram_id : écris à @userinfobot. Pour l'ID du groupe : ajoute le bot au groupe,
+# puis lis l'ID (négatif, commence par -100) dans les logs du bot ou via @userinfobot ajouté au groupe.
+
+assistant:
+  nom: "Firmin"              # prénom de l'assistant choisi par le foyer (substitué dans content/CLAUDE.md)
+  tutoiement: true           # true = tutoiement, false = vouvoiement
+  langue: fr
+
+personnes:                   # allowlist stricte : tout telegram_id absent d'ici est ignoré
+  - telegram_id: 111111111
+    prenom: Alex
+    linux_user: alex       # utilisateur Linux dont la session Claude est utilisée
+    role: proprietaire       # proprietaire (défaut : administre le système en conversation) | membre | invite
+    # tailscale_login: alex@example.org   # appli web, facultatif : compte Tailscale de la personne ; connexion refusée
+                                         # depuis un autre compte. Absent : appris à la connexion, visible dans
+                                         # Réglages → appareils (« vu depuis … »).
+  - telegram_id: 222222222
+    prenom: Camille
+    linux_user: camille
+    auth: cle_api              # cle_api = conversations via ANTHROPIC_API_KEY (rien ne touche son compte Claude) ; abonnement = sa session Claude Code
+    role: proprietaire
+
+groupe_telegram_id: -100123456789   # groupe Telegram du foyer (briefs, rappels, alertes healthcheck)
+
+crons:                       # heures locales du VPS ; formats : "HH:MM", "Jour HH:MM", "Mon..Fri HH:MM", "Mon,Thu HH:MM"
+                             # Plus simple : le demander à l'assistant (« mets le brief du matin à 7h30 »), lot 7a.
+  porteur_linux_user: alex # informatif ; les crons tournent en clé API (ANTHROPIC_API_KEY)
+  brief_hebdo: "Sun 19:00"   # → timer homeos-brief-hebdo (mis à jour tout seul après modification, lot 7a)
+  brief_jour: "07:15"        # → timer homeos-brief-jour
+  # Le rappel Kitchen Daily est un cron de la capacité kitchen_daily (voir `capacites:` ci-dessous) ;
+  # l'ancienne clé rappel_kitchen_daily: "Wed 18:00" reste acceptée.
+
+agendas:                     # agendas iCal lus par l'outil agenda_lire
+  - nom: Foyer
+    ical_url_env: ICAL_FOYER      # nom de la variable dans data/secrets.env (jamais l'URL ici)
+    ecriture: false               # écriture Google non configurée en lot 1
+  - nom: Alex
+    ical_url_env: ICAL_ALEX
+  - nom: Camille
+    ical_url_env: ICAL_CAMILLE
+
+kitchen_daily:               # lot 2 — plats livrés (compte d'une personne du foyer)
+  url: "https://www.kitchen-daily.fr"   # racine du site
+  formule_plats: 18          # repli si le compteur « N / 18 PLATS » n'est pas lisible
+  # La session se crée une fois sur le serveur : python -m tools.kitchen_daily login (voir README)
+
+capacites:                   # lot 5a — réglages par capacité (facultatif ; les manifestes donnent les valeurs par défaut)
+  kitchen_daily:
+    validation: humaine      # humaine (bouton Valider) | automatique (l'assistant décide et applique, puis informe le groupe)
+    crons:
+      rappel: "Wed 18:00"    # → timer homeos-cap-kitchen_daily-rappel (mis à jour tout seul après modification)
+  # transports:              # bus, car, métro, tram, train, avion (remplace « bus ») — rien à régler ici d'habitude :
+  #   crons:                 # les réseaux locaux, le seuil d'alerte et l'heure du rappel de la veille se règlent en
+  #     alertes_retard: "06:00..21:00/10"   # conversation (data/capacites/transports/parametres.yaml) ; aucun réseau
+  #     veille_reservations: "06:00..22:00/15"   # local n'est supposé (le train SNCF est toujours disponible).
+
+# transports:                # facultatif : adresse du service local d'un réseau (développement)
+#   cartreize:
+#     url: "http://127.0.0.1:8081"
+
+plafonds:
+  confirmation_requise_eur: 0    # toute dépense demande confirmation (lot 1 : aucune dépense possible)
+
+coffre:                      # lot 5b — identifiants des services (Planity, cantine…), voir docs/coffre.md
+  backend: fichier           # fichier = data/coffre.json chiffré (COFFRE_CLE) ; vaultwarden = pas encore implémenté
+
+ia:                          # lot 4a — modèles Claude (alias haiku | sonnet | opus, ou identifiant complet claude-…)
+  modele_simple: haiku       # commandes, confirmations, demandes courtes (« ajoute du lait »)
+  modele: sonnet             # conversation courante, briefs
+  modele_decisions: opus     # choix, comparaisons, sélections (Kitchen Daily…)
+  routeur: true              # false : toujours `modele` (pas de classification par Haiku)
+  session_max_reponses: 20   # nouvelle session Claude après 20 réponses…
+  session_ttl_heures: 2      # … ou 2 h d'inactivité (l'historique reste affiché dans l'appli)
+
+meteo:                       # lot 4a — carte du jour de l'appli (Open-Meteo, sans clé)
+  commune: "Ma commune"      # commune du foyer (pas la grande ville voisine)
+  # latitude: 45.00          # facultatif : sinon la commune est géocodée une fois
+  # longitude: 2.00

@@ -1,0 +1,33 @@
+[Unit]
+Description=Firmin Assistant - transports, fournisseur Cartreize (horaires GTFS/SIRI, 127.0.0.1:8081)
+After=network-online.target
+Wants=network-online.target
+# Sans grille GTFS, app.mjs ne peut pas démarrer : l'unité est ignorée (pas de boucle de redémarrage). La grille
+# n'existe que si le foyer utilise ce réseau (capabilities/transports/install.sh, cron rafraichir_grilles) ;
+# homeos-transports-cartreize-recharger.path relance alors le service.
+ConditionPathExists=/srv/home-os/data/capacites/transports/cartreize/gtfs/horaires.json
+
+[Service]
+Type=simple
+User=homeos
+Group=foyer
+UMask=0002
+WorkingDirectory=/srv/home-os/capabilities/transports/fournisseurs/cartreize/service
+# Écoute locale uniquement : seule la source Python du fournisseur l'interroge.
+Environment=HOST=127.0.0.1
+Environment=PORT=8081
+ExecStart=/usr/bin/node server.mjs
+Restart=always
+RestartSec=5
+# La grille (≈ 20 à 25 Mo de JSON) occupe 300 à 350 Mo une fois chargée.
+MemoryMax=640M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

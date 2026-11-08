@@ -1,0 +1,10 @@
+[Unit]
+Description=Firmin Assistant - atelier : un résultat de fabrication attend (lot 7b)
+Documentation=file:///srv/home-os/docs/atelier.md
+
+[Path]
+PathExistsGlob=/var/lib/homeos/atelier/_resultats/*.json
+Unit=homeos-atelier-installer.service
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,49 @@
+[Unit]
+Description=Firmin Assistant - atelier : fabrication d'une capacité (bac à sable, lot 7b)
+Documentation=file:///srv/home-os/docs/atelier.md
+After=network-online.target homeos-web.service
+Wants=network-online.target
+
+[Service]
+# Exploration du site, sous-agent Claude Code (homeos-claude --homeos-atelier), contrôles, tests et smoke test de la
+# capacité générée. Le code généré s'exécute ICI : aucune donnée du foyer, aucun secret sauf la clé API (passée à
+# claude par le wrapper) et l'adresse du navigateur isolé ; seul /var/lib/homeos/atelier est accessible en écriture.
+# L'installation (relecture, copie, message) est faite ensuite par homeos-atelier-installer, hors de ce bac à sable.
+Type=oneshot
+User=homeos
+Group=homeos
+UMask=0027
+WorkingDirectory=/srv/home-os
+Environment=HOMEOS_ROOT=/srv/home-os
+Environment=HOMEOS_DATA=/tmp/atelier-donnees
+Environment=HOMEOS_ETAT=/var/lib/homeos
+Environment=HOMEOS_SECRETS=/etc/homeos
+Environment=HOME=/var/lib/homeos/atelier/.maison
+Environment=PYTHONPATH=/srv/home-os
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+Environment=PYTHONUNBUFFERED=1
+Environment=DISABLE_AUTOUPDATER=1
+Environment=HOMEOS_ATELIER_LANCEMENT=systemd
+EnvironmentFile=-/etc/default/homeos-proxy
+ExecStart=/srv/home-os/.venv/bin/python -m tools.atelier fabriquer
+TimeoutStartSec=3600
+# Bac à sable : rien du foyer n'est visible.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+InaccessiblePaths=/srv/home-os/data -/var/lib/homeos-cwd -/var/backups/homeos
+TemporaryFileSystem=/var/lib/homeos /etc/homeos:ro
+BindPaths=/var/lib/homeos/atelier
+BindReadOnlyPaths=-/etc/homeos/anthropic.env -/etc/homeos/navigateur.env
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+MemoryMax=1500M
+TasksMax=512

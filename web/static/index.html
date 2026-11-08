@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appli du foyer — démonstration du backend</title>
+<style>
+:root { color-scheme: light dark; --bord: #8884; --accent: #2f6f5e; }
+body { font: 15px/1.45 system-ui, sans-serif; margin: 0 auto; max-width: 860px; padding: 16px; }
+h1 { font-size: 1.2rem; } h2 { font-size: 1rem; margin: 1.2em 0 .4em; }
+section { border: 1px solid var(--bord); border-radius: 10px; padding: 12px; margin: 12px 0; }
+button { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--bord); cursor: pointer; }
+button.principal { background: var(--accent); color: #fff; border-color: var(--accent); }
+input, textarea, select { font: inherit; padding: 6px; border-radius: 6px; border: 1px solid var(--bord); }
+textarea { width: 100%; box-sizing: border-box; min-height: 60px; }
+#journal { white-space: pre-wrap; font: 12px/1.4 ui-monospace, monospace; max-height: 420px; overflow: auto;
+  background: #8881; padding: 8px; border-radius: 8px; }
+.texte { white-space: pre-wrap; padding: 8px; border-left: 3px solid var(--accent); margin: 8px 0; }
+.ligne { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+.cache { display: none; }
+small { opacity: .7; }
+</style>
+</head>
+<body>
+<h1>Appli du foyer <small>— page de démonstration du backend (lot 4a), le vrai front arrive au lot 4b</small></h1>
+
+<section id="bloc-connexion">
+  <h2>Connexion</h2>
+  <div class="ligne" id="ligne-inscription">
+    <button class="principal" id="btn-inscription">Activer cet appareil (passkey)</button>
+    <small>lien d'invitation détecté</small>
+  </div>
+  <div class="ligne"><button class="principal" id="btn-connexion">Se connecter avec une passkey</button></div>
+  <div class="ligne">
+    <input id="code-personne" placeholder="Prénom"><button id="btn-code-demande">Recevoir un code sur Telegram</button>
+    <input id="code" placeholder="Code à 6 chiffres" size="10"><button id="btn-code">Valider le code</button>
+  </div>
+</section>
+
+<section id="bloc-appli" class="cache">
+  <div class="ligne">
+    <strong id="qui"></strong>
+    <button id="btn-stepup">Confirmer mon identité (step-up)</button>
+    <button id="btn-ajout">Ajouter une passkey</button>
+    <button id="btn-brief">Carte du jour</button>
+    <button id="btn-deconnexion">Se déconnecter</button>
+  </div>
+  <div class="ligne">
+    <select id="conversations"></select>
+    <button id="btn-nouvelle">Nouvelle conversation</button>
+    <button id="btn-historique">Historique</button>
+  </div>
+  <textarea id="message" placeholder="Écris ton message…"></textarea>
+  <div class="ligne">
+    <button class="principal" id="btn-envoyer">Envoyer</button>
+    <input type="file" id="fichier" accept=".pdf,.jpg,.jpeg,.png,.heic">
+    <small id="piece"></small>
+  </div>
+  <div id="reponse" class="texte"></div>
+  <div id="boutons" class="ligne"></div>
+</section>
+
+<section>
+  <h2>Événements bruts (SSE, cartes en JSON)</h2>
+  <div id="journal"></div>
+</section>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+let stepUp = null, pieces = [], conversation = null;
+
+function trace(type, donnees) {
+  const j = $("journal");
+  j.textContent += `[${type}] ${typeof donnees === "string" ? donnees : JSON.stringify(donnees, null, 1)}\n`;
+  j.scrollTop = j.scrollHeight;
+}
+
+async function api(methode, chemin, corps, brut) {
+  const entetes = { "X-Requested-With": "homeos" };
+  if (stepUp && Date.parse(stepUp.expire) > Date.now()) entetes["X-Homeos-Step-Up"] = stepUp.jeton;
+  const init = { method: methode, headers: entetes, credentials: "same-origin" };
+  if (corps instanceof FormData) init.body = corps;
+  else if (corps !== undefined) { entetes["Content-Type"] = "application/json"; init.body = JSON.stringify(corps); }
+  const r = await fetch(chemin, init);
+  if (brut) return r;
+  const donnees = await r.json().catch(() => ({}));
+  if (!r.ok) { trace("erreur " + r.status, donnees); throw donnees; }
+  return donnees;
+}
+
+// --- WebAuthn : conversions base64url <-> ArrayBuffer ------------------------------------------------------------
+const versOctets = (b64) => Uint8Array.from(atob(b64.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(b64.length / 4) * 4, "=")), (c) => c.charCodeAt(0)).buffer;
+const versB64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+function optionsCreation(o) {
+  return { ...o, challenge: versOctets(o.challenge), user: { ...o.user, id: versOctets(o.user.id) },
+    excludeCredentials: (o.excludeCredentials || []).map((c) => ({ ...c, id: versOctets(c.id) })) };
+}
+function optionsAssertion(o) {
+  return { ...o, challenge: versOctets(o.challenge),
+    allowCredentials: (o.allowCredentials || []).map((c) => ({ ...c, id: versOctets(c.id) })) };
+}
+function credentialJson(c) {
+  const r = c.response, sortie = { id: c.id, rawId: versB64(c.rawId), type: c.type, clientExtensionResults: c.getClientExtensionResults(), response: { clientDataJSON: versB64(r.clientDataJSON) } };
+  if (r.attestationObject) { sortie.response.attestationObject = versB64(r.attestationObject); sortie.response.transports = r.getTransports ? r.getTransports() : []; }
+  else { sortie.response.authenticatorData = versB64(r.authenticatorData); sortie.response.signature = versB64(r.signature); if (r.userHandle) sortie.response.userHandle = versB64(r.userHandle); }
+  return sortie;
+}
+
+async function inscrire(jeton) {
+  const { ceremonie, options } = await api("POST", "/auth/inscription/options", jeton ? { jeton } : {});
+  const cred = await navigator.credentials.create({ publicKey: optionsCreation(options) });
+  await api("POST", "/auth/inscription/verification", { ceremonie, credential: credentialJson(cred), nom: navigator.platform || "" });
+  history.replaceState(null, "", "/");
+  await demarrer();
+}
+async function connecter() {
+  const { ceremonie, options } = await api("POST", "/auth/connexion/options", {});
+  const cred = await navigator.credentials.get({ publicKey: optionsAssertion(options) });
+  await api("POST", "/auth/connexion/verification", { ceremonie, credential: credentialJson(cred) });
+  await demarrer();
+}
+async function confirmerIdentite() {
+  const { ceremonie, options } = await api("POST", "/auth/step-up/options", {});
+  const cred = await navigator.credentials.get({ publicKey: optionsAssertion(options) });
+  stepUp = await api("POST", "/auth/step-up", { ceremonie, credential: credentialJson(cred) });
+  trace("step-up", { expire: stepUp.expire });
+}
+
+// --- conversation ----------------------------------------------------------------------------------------------
+async function chargerConversations() {
+  const d = await api("GET", "/api/conversations");
+  const sel = $("conversations");
+  sel.innerHTML = "";
+  for (const c of d.conversations) {
+    const o = document.createElement("option");
+    o.value = c.id; o.textContent = `#${c.id} ${c.titre || "(vide)"} — ${c.nb_messages} message(s)`;
+    sel.appendChild(o);
+  }
+  if (!d.conversations.length) { const n = await api("POST", "/api/conversations"); return chargerConversations(); }
+  conversation = Number(d.courante || d.conversations[0].id);
+  sel.value = conversation;
+}
+
+async function lireSSE(reponse, surEvenement) {
+  const lecteur = reponse.body.getReader(), dec = new TextDecoder();
+  let tampon = "";
+  for (;;) {
+    const { value, done } = await lecteur.read();
+    if (done) break;
+    tampon += dec.decode(value, { stream: true });
+    let i;
+    while ((i = tampon.indexOf("\n\n")) >= 0 || (i = tampon.indexOf("\r\n\r\n")) >= 0) {
+      const bloc = tampon.slice(0, i); tampon = tampon.slice(i + (tampon[i] === "\r" ? 4 : 2));
+      let type = "message", data = "";
+      for (const ligne of bloc.split(/\r?\n/)) {
+        if (ligne.startsWith("event:")) type = ligne.slice(6).trim();
+        else if (ligne.startsWith("data:")) data += ligne.slice(5).trim();
+      }
+      if (data) surEvenement(type, JSON.parse(data));
+    }
+  }
+}
+
+function boutonConfirmation(c) {
+  for (const decision of ["valider", "annuler"]) {
+    const b = document.createElement("button");
+    b.textContent = `${decision === "valider" ? "Valider" : "Annuler"} : ${c.resume}${c.step_up && decision === "valider" ? " (step-up)" : ""}`;
+    b.onclick = async () => {
+      if (c.step_up && decision === "valider" && !(stepUp && Date.parse(stepUp.expire) > Date.now())) await confirmerIdentite();
+      const r = await api("POST", `/api/confirmations/${c.id}`, { decision });
+      trace("resultat_confirmation", r); $("boutons").innerHTML = "";
+    };
+    $("boutons").appendChild(b);
+  }
+}
+
+async function envoyer() {
+  const texte = $("message").value.trim();
+  if (!texte && !pieces.length) return;
+  $("reponse").textContent = ""; $("boutons").innerHTML = "";
+  const r = await api("POST", `/api/conversations/${conversation}/messages`, { texte, pieces_jointes: pieces, contexte: { ecran: "accueil" } }, true);
+  if (!r.ok) { trace("erreur " + r.status, await r.json().catch(() => ({}))); return; }
+  $("message").value = ""; pieces = []; $("piece").textContent = "";
+  await lireSSE(r, (type, d) => {
+    if (type === "texte") { $("reponse").textContent += d.delta; return; }
+    trace(type, d);
+    if (type === "fin") $("reponse").textContent = d.texte;
+    if (type === "confirmation" && !d.auto) boutonConfirmation(d);
+    if (type === "erreur") $("reponse").textContent = "⚠️ " + d.message;
+  });
+}
+
+async function demarrer() {
+  const s = await api("GET", "/auth/session");
+  const jeton = location.pathname === "/inscription" ? location.hash.slice(1) : "";
+  $("ligne-inscription").classList.toggle("cache", !jeton);
+  $("bloc-appli").classList.toggle("cache", !s.connecte);
+  if (!s.connecte) return;
+  $("qui").textContent = `${s.personne.prenom} (${s.personne.role}) — ${s.passkeys} passkey(s)`;
+  await chargerConversations();
+}
+
+const prudent = (fn) => async () => { try { await fn(); } catch (e) { trace("erreur", e && e.message ? e.message : e); } };
+$("btn-inscription").onclick = prudent(() => inscrire(location.hash.slice(1)));
+$("btn-connexion").onclick = prudent(connecter);
+$("btn-code-demande").onclick = prudent(async () => trace("code", await api("POST", "/auth/code/demande", { personne: $("code-personne").value })));
+$("btn-code").onclick = prudent(async () => { await api("POST", "/auth/code/verification", { personne: $("code-personne").value, code: $("code").value }); await demarrer(); });
+$("btn-stepup").onclick = prudent(confirmerIdentite);
+$("btn-ajout").onclick = prudent(() => inscrire(""));
+$("btn-deconnexion").onclick = prudent(async () => { await api("POST", "/auth/deconnexion", {}); location.reload(); });
+$("btn-nouvelle").onclick = prudent(async () => { await api("POST", "/api/conversations"); await chargerConversations(); });
+$("btn-historique").onclick = prudent(async () => trace("historique", await api("GET", `/api/conversations/${conversation}/messages`)));
+$("btn-brief").onclick = prudent(async () => trace("brief", await api("GET", "/api/brief/jour")));
+$("conversations").onchange = (e) => { conversation = Number(e.target.value); };
+$("btn-envoyer").onclick = prudent(envoyer);
+$("fichier").onchange = prudent(async (e) => {
+  const f = $("fichier").files[0]; if (!f) return;
+  const fd = new FormData(); fd.append("fichier", f);
+  const d = await api("POST", "/api/fichiers", fd);
+  pieces.push(d.id); $("piece").textContent = `📎 ${d.nom}`;
+});
+demarrer().catch((e) => trace("erreur", e));
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+# Firmin Assistant — sudoers restreint (modèle ; install.sh le copie dans /etc/sudoers.d/homeos après
+# avoir remplacé __PERSONNES__ par les utilisateurs Linux de config.yaml et __CLAUDE_AUTH__ par les chemins
+# réels de `claude`, puis le vérifie avec visudo -c).
+#
+# homeos (bot, healthcheck) peut lancer, sous l'utilisateur d'une personne et sans mot de passe :
+#   - le wrapper /usr/local/sbin/homeos-claude (root:root 755), qui impose -p, les outils, le mode dontAsk,
+#     des réglages restrictifs et refuse toute autre option (Bash, bypassPermissions, --dangerously-*…) ;
+#   - `claude auth status` exactement (healthcheck, /statut).
+# Rien d'autre : pas de shell, pas de `claude` avec des arguments libres.
+Runas_Alias HOMEOS_PERSONNES = __PERSONNES__
+Cmnd_Alias HOMEOS_CLAUDE = /usr/local/sbin/homeos-claude, __CLAUDE_AUTH__
+Defaults:homeos always_set_home
+Defaults:homeos env_reset
+Defaults:homeos logfile=/var/log/sudo-homeos.log
+homeos ALL=(HOMEOS_PERSONNES) NOPASSWD: HOMEOS_CLAUDE

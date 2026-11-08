@@ -1,0 +1,11 @@
+[Unit]
+Description=Firmin Assistant - atelier : une demande attend (lot 7b)
+Documentation=file:///srv/home-os/docs/atelier.md
+
+[Path]
+# Déposé par tools.atelier.executer_creation après le bouton Valider d'un propriétaire.
+PathExistsGlob=/var/lib/homeos/atelier/_file/*.json
+Unit=homeos-atelier.service
+
+[Install]
+WantedBy=multi-user.target

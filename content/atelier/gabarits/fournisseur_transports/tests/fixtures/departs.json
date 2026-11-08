@@ -1,0 +1,5 @@
+{"departs": [
+  {"ligne": "A", "destination": "Centre", "prevu": "08:05", "estime": "08:07"},
+  {"ligne": "A", "destination": "Centre", "prevu": "08:20"},
+  {"ligne": "A", "destination": "Centre", "prevu": "08:35", "supprime": true}
+]}

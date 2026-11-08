@@ -1,0 +1,7 @@
+[Unit]
+Description=Firmin Assistant - redémarrage du service Cartreize (nouvelle grille GTFS)
+
+[Service]
+Type=oneshot
+# Seulement si le service est activé (une capacité désactivée ou un réseau non utilisé ne redémarre pas tout seul).
+ExecStart=/bin/sh -c 'if systemctl is-enabled --quiet homeos-transports-cartreize.service; then systemctl restart homeos-transports-cartreize.service; fi'

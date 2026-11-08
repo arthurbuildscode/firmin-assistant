@@ -1,0 +1,182 @@
+{
+ "ligne": {
+  "id": "7",
+  "ligne": "7",
+  "nom": "Villeneuve ⇄ Grandport",
+  "couleur": "#009FE3",
+  "texte": "#FFFFFF",
+  "tempsReel": true
+ },
+ "sens": {
+  "id": "grandport",
+  "libelle": "Vers Grandport"
+ },
+ "arret": {
+  "id": "pont-du-moulin-villeneuve",
+  "nom": "Pont du Moulin",
+  "commune": "Villeneuve"
+ },
+ "autresSens": [
+  {
+   "id": "grandport",
+   "libelle": "Vers Grandport",
+   "url": "/l/7/grandport/pont-du-moulin-villeneuve"
+  },
+  {
+   "id": "villeneuve",
+   "libelle": "Vers Villeneuve",
+   "url": "/l/7/villeneuve/pont-du-moulin-villeneuve"
+  }
+ ],
+ "autresLignes": [
+  {
+   "id": "48",
+   "ligne": "48",
+   "nom": "Villeneuve Centre-Grandport",
+   "couleur": "#E4032E",
+   "texte": "#FFFFFF",
+   "tempsReel": true,
+   "url": "/l/48/villeneuve/pont-du-moulin-villeneuve",
+   "sens": "Vers Villeneuve"
+  }
+ ],
+ "heure": "16:10",
+ "tempsReel": {
+  "ok": true,
+  "disponible": true,
+  "ageSecondes": 0,
+  "erreur": null,
+  "reponseA": 1794064178587,
+  "essaiA": 1794064178587,
+  "arretSansDonnees": false,
+  "estimeViaArretSuivant": false
+ },
+ "passes": [
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "14:55",
+   "estime": null,
+   "retard": null,
+   "dans": -75,
+   "suivi": false,
+   "statut": "passe",
+   "course": "100001"
+  },
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "15:25",
+   "estime": null,
+   "retard": null,
+   "dans": -45,
+   "suivi": false,
+   "statut": "passe",
+   "course": "100002"
+  },
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "15:55",
+   "estime": null,
+   "retard": null,
+   "dans": -15,
+   "suivi": false,
+   "statut": "passe",
+   "course": "100003"
+  }
+ ],
+ "prochains": [
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "16:25",
+   "estime": "16:32",
+   "retard": 7,
+   "dans": 22,
+   "suivi": true,
+   "statut": "a_venir",
+   "course": "100004",
+   "vuA": 1794064178587
+  },
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "16:55",
+   "estime": "16:57",
+   "retard": 2,
+   "dans": 47,
+   "suivi": true,
+   "statut": "a_venir",
+   "course": "100005",
+   "vuA": 1794064178587
+  },
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "17:25",
+   "estime": "17:25",
+   "retard": 0,
+   "dans": 75,
+   "suivi": false,
+   "statut": "a_venir",
+   "course": "100006",
+   "vuA": 1794064178587
+  },
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "17:55",
+   "estime": null,
+   "retard": null,
+   "dans": 105,
+   "suivi": false,
+   "statut": "prevu",
+   "course": "100007"
+  },
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "18:35",
+   "estime": null,
+   "retard": null,
+   "dans": 145,
+   "suivi": false,
+   "statut": "prevu",
+   "course": "100008"
+  },
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "19:20",
+   "estime": null,
+   "retard": null,
+   "dans": 190,
+   "suivi": false,
+   "statut": "prevu",
+   "course": "100009"
+  },
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "20:04",
+   "estime": null,
+   "retard": null,
+   "dans": 234,
+   "suivi": false,
+   "statut": "prevu",
+   "course": "100010"
+  },
+  {
+   "ligne": "7",
+   "destination": "Grandport – Gare Centrale",
+   "prevu": "22:14",
+   "estime": null,
+   "retard": null,
+   "dans": 364,
+   "suivi": false,
+   "statut": "prevu",
+   "course": "100011"
+  }
+ ]
+}

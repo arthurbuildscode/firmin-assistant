@@ -1,0 +1,14 @@
+# Fournisseur standard (ex-capacité « bus », lot 5c) : cars Cartreize de la Métropole Aix-Marseille-Provence.
+# Grille GTFS et temps réel SIRI open data, via le service local homeos-transports-cartreize (127.0.0.1:8081).
+nom: cartreize
+titre: Cartreize (cars de la Métropole Aix-Marseille-Provence)
+description: Horaires et retards en temps réel des cars Cartreize (grille GTFS, temps réel SIRI).
+modes: [bus, car]
+source: api_ouverte
+formats: [gtfs, siri]
+portee: locale
+zone: Métropole Aix-Marseille-Provence
+origine: humain
+# Le service local interroge ces hôtes (prepare.py : grille ; app.mjs : SIRI) ; la source Python ne parle qu'au service local.
+reseau: [127.0.0.1, siri.lametropolemobilite.fr, app.mecatran.com]
+licence: Licence ouverte (transport.data.gouv.fr)

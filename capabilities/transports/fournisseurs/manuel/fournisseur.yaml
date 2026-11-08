@@ -1,0 +1,11 @@
+# Fournisseur standard « manuel » : un trajet sans source ouverte (réseau non couvert, covoiturage, navette
+# d'entreprise…). Seule l'heure habituelle est connue ; aucune alerte de retard n'est possible.
+nom: manuel
+titre: Sans suivi en temps réel
+description: Trajet noté avec son heure habituelle, sans horaires ni retards en direct.
+modes: [bus, car, metro, tram, train, navette, bateau, velo]
+source: manuel
+portee: nationale
+zone: Partout
+origine: humain
+reseau: []
