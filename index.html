@@ -1234,8 +1234,7 @@ p{margin:0}
       <p><a href="confidentialite.html">Règles de confidentialité</a> · <a href="conditions.html">Conditions d'utilisation</a></p>
     </div>
     <div class="contact">
-      <span>Contact :</span><code id="mail">contact@firmin-assistant.fr</code><button class="copy" id="copy" type="button">Copier</button>
-      <span class="fine">adresse provisoire</span>
+      <span>Contact :</span><a href="https://github.com/arthurbuildscode/firmin-assistant/issues">les signalements du dépôt public</a>
     </div>
   </div>
 </footer>
@@ -1288,7 +1287,7 @@ p{margin:0}
 
   /* Copier l'adresse de contact */
   var copy = document.getElementById('copy'), mail = document.getElementById('mail');
-  copy.addEventListener('click', function(){
+  if (copy) copy.addEventListener('click', function(){
     var done = function(){ copy.textContent = 'Copié'; setTimeout(function(){ copy.textContent = 'Copier'; }, 1600); };
     var fallback = function(){ var r = document.createRange(); r.selectNodeContents(mail); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); };
     try { navigator.clipboard.writeText(mail.textContent).then(done, fallback); } catch(e) { fallback(); }
